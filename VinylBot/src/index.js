@@ -3,6 +3,7 @@ import "dotenv/config";
 import { Client, EmbedBuilder, GatewayIntentBits } from "discord.js";
 
 import { appendAlbumToSheet } from "./sheets.js";
+import { getDropdownValue } from "./utils/discordToDropdown.js";
 import { parseSpotifyUrl } from "./parseSpotifyUrl.js";
 import { spotifyGet } from "./spotify.js";
 
@@ -47,10 +48,12 @@ client.on("messageCreate", async (message) => {
     message.reply({ embeds: [embed] });
 
     // Get requester info
-    const requester = `${message.author.username}#${message.author.discriminator}`;
+    const requester = `${message.author.username}`;
+
+    const dropdownValue = getDropdownValue(requester);
 
     // Append to Google Sheet
-    await appendAlbumToSheet(artists, albumName, albumArt, requester);
+    await appendAlbumToSheet(artists, albumName, albumArt, dropdownValue);
 
   } catch (err) {
     console.error(err);
