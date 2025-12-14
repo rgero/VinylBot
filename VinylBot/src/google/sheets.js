@@ -44,3 +44,7 @@ export async function appendAlbumToSheet(artist, album, imageUrl, requester, she
 
   console.log(`✅ Appended album "${album}" by "${artist}" requested by ${requester}`);
 }
+
+export const addAlbumListen = async (artist, album, requester) => {
+  console.log(artist, album, requester);
+}
