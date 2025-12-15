@@ -1,7 +1,6 @@
-import type Vinyl = require("./Vinyl");
-
 export interface PlayLog {
-  album: Vinyl.Vinyl["id"],
+  id: string,
+  album: string,
   listener: string,
   date: Date
 }

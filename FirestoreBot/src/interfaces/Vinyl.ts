@@ -1,15 +1,16 @@
-import type Store = require("./Store");
+import { Timestamp } from "firebase-admin/firestore";
+
+export type StoreId = string;
 
 export interface Vinyl {
-  id: string,
-  artist: string,
-  album: string,
-  datePurchased: Date,
-  purchaseLocation: Store.Store["id"],
-  price: number,
-  owner: string,
-  length: number,
-  notes: string,
-  playCount: number,
-  likedBy: string[]
+  artist: string;
+  album: string;
+  datePurchased: Timestamp;
+  purchaseLocationId: StoreId;
+  price: number;
+  owner: string;
+  length: number;
+  notes?: string;
+  playCount: number;
+  likedBy: string[];
 }

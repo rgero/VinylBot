@@ -13,7 +13,8 @@
   "license": "ISC",
   "type": "commonjs",
   "dependencies": {
-    "firebase-admin": "^13.6.0"
+    "firebase-admin": "^13.6.0",
+    "googleapis": "^168.0.0"
   },
   "devDependencies": {
     "@types/node": "^25.0.2",
