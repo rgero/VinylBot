@@ -1,46 +1,59 @@
 import { db } from "../firebase";
+import dotenv from "dotenv";
 import { google } from "googleapis";
+import path from "node:path";
 
-// -------------------------------
-// Google Sheets config
-// -------------------------------
-const SPREADSHEET_ID = process.env.SPREADSHEET_ID!;
-const RANGE = "Stores!A2:D"; // adjust as needed
+dotenv.config();
 
-const sheets = google.sheets("v4");
 
-// -------------------------------
-// Auth (service account or OAuth)
-// -------------------------------
+// ---------------------------------------------
+// Environment safety check
+// ---------------------------------------------
+if (!process.env.SPREADSHEET_ID) {
+  throw new Error("SPREADSHEET_ID env var is required");
+}
+
+const SERVICE_ACCOUNT_PATH = path.resolve(
+  process.cwd(),
+  "service-account.json"
+);
+
+// ---------------------------------------------
+// Google Sheets Auth
+// ---------------------------------------------
 const auth = new google.auth.GoogleAuth({
+  keyFile: SERVICE_ACCOUNT_PATH,
   scopes: ["https://www.googleapis.com/auth/spreadsheets.readonly"],
 });
 
-async function migrateStores() {
-  const client = await auth.getClient();
+// ---------------------------------------------
+// Sheets client (IMPORTANT: auth goes here)
+// ---------------------------------------------
+const sheets = google.sheets({
+  version: "v4",
+  auth,
+});
 
+// ---------------------------------------------
+// Migration
+// ---------------------------------------------
+async function migrateStores(): Promise<void> {
   const response = await sheets.spreadsheets.values.get({
-    auth: client,
-    spreadsheetId: SPREADSHEET_ID,
-    range: RANGE,
+    spreadsheetId: process.env.SPREADSHEET_ID!,
+    range: "Location Info!A2:D", // adjust if needed
   });
 
   const rows = response.data.values;
 
   if (!rows || rows.length === 0) {
-    console.log("No store rows found.");
+    console.log("No stores found in sheet.");
     return;
   }
 
   let migrated = 0;
 
   for (const row of rows) {
-    const [
-      name,
-      address,
-      recommendedRaw,
-      notes,
-    ] = row;
+    const [name, address, recommendedRaw, notes] = row;
 
     if (!name || !address) {
       console.warn("Skipping invalid row:", row);
@@ -51,7 +64,6 @@ async function migrateStores() {
       String(recommendedRaw).toLowerCase() === "true" ||
       String(recommendedRaw).toLowerCase() === "yes";
 
-    // Use store name as deterministic ID (safe + idempotent)
     const storeId = name
       .toLowerCase()
       .replace(/[^a-z0-9]+/g, "-");
@@ -73,7 +85,10 @@ async function migrateStores() {
   console.log(`✅ Migrated ${migrated} stores`);
 }
 
+// ---------------------------------------------
+// Execute
+// ---------------------------------------------
 migrateStores().catch(err => {
-  console.error("❌ Migration failed:", err);
+  console.error("❌ Store migration failed:", err);
   process.exit(1);
 });
