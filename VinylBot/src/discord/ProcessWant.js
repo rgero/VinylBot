@@ -5,11 +5,12 @@ import { parseSpotifyUrl } from "../spotify/parseSpotifyUrl.js";
 import { spotifyGet } from "../spotify/spotify.js";
 
 export const ProcessWant = async (message) => {
-  const parsed = parseSpotifyUrl(message.content);
+  const args = message.content.split(" ").slice(1).join(" ").trim();
+  const spotifyLink = args.split(" ")[0]
+  const notes = args.split(" ").slice(1).join(" ").trim();
+
+  const parsed = parseSpotifyUrl(spotifyLink);
   if (!parsed) return;
-
-  const notes = message.content.slice(parsed.index + parsed.length).trim();
-
   try {
     const data = await spotifyGet(`${parsed.type}s/${parsed.id}`);
 

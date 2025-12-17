@@ -8,7 +8,5 @@ export function parseSpotifyUrl(text) {
   return {
     type: match[1],
     id: match[2],
-    index: match.index, // <-- capture where the match starts
-    length: match[0].length, // <-- capture match length
   };
 }
