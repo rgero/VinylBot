@@ -29,7 +29,7 @@ export const ProcessWant = async (message) => {
       .addFields(
         { name: "Release Date", value: data.release_date || "N/A", inline: true },
         { name: "Tracks", value: `${data.total_tracks || "N/A"}`, inline: true },
-        { name: "Requested By", value: dropdownValue, inline: true }
+        { name: "Requested By", value: mappedRequester, inline: true }
       );
 
     message.reply({ embeds: [embed] });
