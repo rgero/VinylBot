@@ -35,12 +35,31 @@ export const getWantList = async ({type, term}) => {
     );
   }
 
-  // Sort the rows
-  dataRows.sort((a, b) =>
-    (a[0] ?? "").localeCompare(b[0] ?? "", undefined, {
+  // Sort the rows - Artist and then Album. Ignoring the/a/an
+  dataRows.sort((a, b) => {
+    const artistA = normalizeForSort(a[0]);
+    const artistB = normalizeForSort(b[0]);
+
+    const artistCompare = artistA.localeCompare(artistB, undefined, {
       sensitivity: "base",
-    })
-  );
+    });
+
+    if (artistCompare !== 0) return artistCompare;
+
+    const albumA = normalizeForSort(a[1]);
+    const albumB = normalizeForSort(b[1]);
+
+    return albumA.localeCompare(albumB, undefined, {
+      sensitivity: "base",
+    });
+  });
 
   return dataRows
 }
+
+const normalizeForSort = (value = "") => {
+  return value
+    .toLowerCase()
+    .replace(/^(the|a|an)\s+/i, "")
+    .trim();
+};
