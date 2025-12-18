@@ -35,5 +35,12 @@ export const getWantList = async ({type, term}) => {
     );
   }
 
+  // Sort the rows
+  dataRows.sort((a, b) =>
+    (a[0] ?? "").localeCompare(b[0] ?? "", undefined, {
+      sensitivity: "base",
+    })
+  );
+
   return dataRows
 }
