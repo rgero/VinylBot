@@ -1,5 +1,6 @@
 import { EmbedBuilder } from "discord.js";
 import { appendAlbumToSheet } from "../google/AppendAlbumToWantlist.js";
+import { escapeColons } from "../utils/escapeColons.js";
 import { getDropdownValue } from "../utils/discordToDropdown.js";
 import { parseSpotifyUrl } from "../spotify/parseSpotifyUrl.js";
 import { spotifyGet } from "../spotify/spotify.js";
@@ -24,8 +25,8 @@ export const ProcessWant = async (message) => {
     const added = await appendAlbumToSheet(artists, albumName, albumArt, mappedRequester, notes);
 
     const embed = new EmbedBuilder()
-      .setTitle(added ? `✅ Added: ${albumName}` : `⚠️ Already on the list`)
-      .setDescription(artists)
+      .setTitle(added ? `✅ Added: ${escapeColons(albumName)}` : `⚠️ Already on the list`)
+      .setDescription(escapeColons(artists))
       .setColor(added ? 0x1db954 : 0xf1c40f)
       .setThumbnail(albumArt)
       .setURL(`https://open.spotify.com/${parsed.type}/${parsed.id}`)

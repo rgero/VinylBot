@@ -1,5 +1,6 @@
 import {ActionRowBuilder, ButtonBuilder, ButtonStyle, ComponentType, EmbedBuilder} from "discord.js";
 
+import { escapeColons } from "../utils/escapeColons.js";
 import { getWantList } from "../google/GetWantList.js";
 import { isInList } from "../utils/userParser.js";
 
@@ -16,7 +17,7 @@ const generateEmbed = (wantList, page, totalPages, type, term, pageSize = 10) =>
   const pageItems = wantList.slice(start, start + pageSize);
 
   const description = pageItems
-    .map((item, idx) => `${start + idx + 1}. ${item[0]} - ${item[1]}`)
+    .map((item, idx) => `${start + idx + 1}. ${escapeColons(item[0])} - ${escapeColons(item[1])}`)
     .join("\n");
 
   const title =

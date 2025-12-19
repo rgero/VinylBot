@@ -1,3 +1,4 @@
+import { escapeColons } from "../utils/escapeColons.js";
 import { getRandomRow } from "../google/GetRandomRow.js";
 
 export const ProcessRandom = async (message) => {
@@ -41,6 +42,8 @@ export const ProcessRandom = async (message) => {
       } else {
         description = `🎵 **${row[0]}**\n💿 *${row[1]}*`;
       }
+
+      description = escapeColons(description);
 
       message.reply({
         embeds: [
