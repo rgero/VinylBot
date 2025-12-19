@@ -61,26 +61,17 @@ export const ProcessPlay = async (message) => {
       await interaction.reply({ content: "This isn't for you!", ephemeral: true });
       return;
     }
-    
-    await interaction.deferUpdate(); 
 
     const selectedIndex = parseInt(interaction.values[0]);
     const selectedRow = data[selectedIndex];
+    const [artist, album] = selectedRow;
 
-    // Since we used deferUpdate, we use editReply or followUp
-    await interaction.followUp({
-      content: `✅ Selected: **${selectedRow[0]} - ${selectedRow[1]}**`,
-      ephemeral: false
+    await LogPlay(artist, album, username);
+
+    await interaction.update({
+      content: `✅ Logged a play for **${artist} - ${album}**`,
+      components: [] 
     });
-
-    await LogPlay(selectedRow[0], selectedRow[1], username);
-    message.reply(`Logged a play for ${selectedRow[0]} - ${selectedRow[1]}`)
-
-    const disabledRow = new ActionRowBuilder().addComponents(
-      StringSelectMenuBuilder.from(selectMenu).setDisabled(true)
-    );
-    
-    await replyMessage.edit({ components: [disabledRow] });
   });
 
   collector.on("end", (collected, reason) => {
