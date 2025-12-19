@@ -16,7 +16,7 @@ export const ProcessPlay = async (message) => {
     const { artists, albumName } = await getSpotifyData(spotify); 
     await LogPlay(artists, albumName, username);
 
-    message.reply(`Logged a play for ${artists} - ${albumName}`)
+    message.reply( `✅ Logged a play for **${artist} - ${album}**`)
     return;
   }
 
@@ -29,6 +29,15 @@ export const ProcessPlay = async (message) => {
 
   if (data.length === 0) {
     await message.reply("No matching albums found!");
+    return;
+  }
+
+  if (data.length === 1)
+  {
+    const [artist, album] = data[0];
+    await LogPlay(artist, album, username);
+
+    message.reply( `✅ Logged a play for **${artist} - ${album}**`)
     return;
   }
 
