@@ -1,7 +1,7 @@
 import { getData } from "./GetData.js";
 
-export const getRandomRow = async ({filterColumnIndex = null, filterValue = null}) => {
-  let dataRows = await getData();
+export const getRandomRow = async ({sheetName = null, filterColumnIndex = null, filterValue = null}) => {
+  let dataRows = await getData(sheetName);
 
   if (filterColumnIndex !== null && filterValue) {
     dataRows = dataRows.filter(

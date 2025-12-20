@@ -1,62 +1,146 @@
+import {ActionRowBuilder, ButtonBuilder, ButtonStyle, ComponentType} from "discord.js";
+
+import { LogPlay } from "../google/LogPlay.js";
 import { escapeColons } from "../utils/escapeColons.js";
+import { getDropdownValue } from "../utils/discordToDropdown.js";
 import { getRandomRow } from "../google/GetRandomRow.js";
 
+const buildEmbed = (row, param) => {
+  const description = param === "store" ? `${row[0]}\n${row[1]}` : `🎵 **${row[0]}**\n💿 *${row[1]}*`;
+  return {
+    title: "🎲 Random Pick",
+    description: escapeColons(description),
+    color: 0x5865f2,
+  };
+};
+
+const buildRow = ({ showPlay, disabled = false }) => {
+  const buttons = [];
+
+  if (showPlay) {
+    buttons.push(
+      new ButtonBuilder()
+        .setCustomId("play")
+        .setLabel("▶️ Play")
+        .setStyle(ButtonStyle.Success)
+        .setDisabled(disabled)
+    );
+  }
+
+  buttons.push(
+    new ButtonBuilder()
+      .setCustomId("reroll")
+      .setLabel("🔁 Reroll")
+      .setStyle(ButtonStyle.Primary)
+      .setDisabled(disabled)
+  );
+
+  return new ActionRowBuilder().addComponents(buttons);
+};
+
 export const ProcessRandom = async (message) => {
-    const args = message.content.split(" ").slice(1);
-    const param = args[0]?.toLowerCase();
+  const args = message.content.split(" ").slice(1);
+  const param = args[0]?.toLowerCase();
+  const isStore = param === "store";
 
-    try {
-      let row;
-      let sheetType = "vinyl";
+  let sheetName = "Vinyls";
+  let filterColumnIndex = null;
+  let filterValue = null;
 
-      // !random store
-      if (param === "store") {
-        sheetType = "store"
-        row = await getRandomRow({
-          sheetName: "Location Info",
+  if (isStore) {
+    sheetName = "Location Info";
+  } else if (param) {
+    filterColumnIndex = 9; // column J
+    filterValue = param;
+  }
+
+  const fetchRow = async () =>
+    getRandomRow({
+      sheetName,
+      filterColumnIndex,
+      filterValue,
+    });
+
+  try {
+    let row = await fetchRow();
+
+    if (!row) {
+      await message.reply("❌ No matching entries found.");
+      return;
+    }
+
+    const sentMessage = await message.reply({
+      embeds: [buildEmbed(row, param)],
+      components: [buildRow({ showPlay: !isStore })],
+    });
+
+    const collector = sentMessage.createMessageComponentCollector({
+      componentType: ComponentType.Button,
+      time: 5 * 60 * 1000, // 5 minutes
+    });
+
+    collector.on("collect", async (interaction) => {
+      if (interaction.user.id !== message.author.id) {
+        await interaction.reply({
+          content: "You can't use these buttons.",
+          ephemeral: true,
         });
-
-      // !random <name>
-      } else if (param) {
-        row = await getRandomRow({
-          sheetName: "Vinyls",
-          filterColumnIndex: 9, // Column J (0-based index)
-          filterValue: param,
-        });
-
-      // !random (no param)
-      } else {
-        row = await getRandomRow({
-          sheetName: "Vinyls",
-        });
-      }
-
-      if (!row) {
-        message.reply("❌ No matching entries found.");
         return;
       }
 
-      let description;
-      if (sheetType === "store") {
-        description = `${row[0]}\n${row[1]}`;
-      } else {
-        description = `🎵 **${row[0]}**\n💿 *${row[1]}*`;
+      if (interaction.customId === "play") {
+        const username = getDropdownValue(message.author.username);
+        const [artist, album] = row;
+
+        await LogPlay(artist, album, username);
+
+        // Remove buttons from original embed
+        await interaction.update({
+          embeds: [buildEmbed(row, param)],
+          components: [],
+        });
+
+        // Public confirmation in chat
+        await interaction.followUp({
+          content: `▶️ **Play logged:** ${artist} — *${album}*`,
+        });
+
+        collector.stop();
+        return;
       }
 
-      description = escapeColons(description);
+      if (interaction.customId === "reroll") {
+        row = await fetchRow();
 
-      message.reply({
-        embeds: [
-          {
-            title: "🎲 Random Pick",
-            description,
-            color: 0x5865f2,
-          },
-        ],
-      });
+        if (!row) {
+          await interaction.reply({
+            content: "❌ No matching entries found.",
+            ephemeral: true,
+          });
+          return;
+        }
 
-    } catch (err) {
-      console.error(err);
-      message.reply("❌ Failed to fetch random entry.");
-    }
-}
+        await interaction.update({
+          embeds: [buildEmbed(row, param)],
+          components: [buildRow({ showPlay: !isStore })],
+        });
+      }
+    });
+
+    collector.on("end", () => {
+      sentMessage
+        .edit({
+          components: [
+            buildRow({
+              showPlay: !isStore,
+              disabled: true,
+            }),
+          ],
+        })
+        .catch(() => {});
+    });
+  } catch (err) {
+    console.error(err);
+    await message.reply("❌ Failed to fetch random entry.");
+  }
+};
