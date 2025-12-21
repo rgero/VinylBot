@@ -18,3 +18,6 @@ Used to record when we play the vinyl
 - `!wantlist` - Gives you the whole want list
 - `!wantlist {person}` - Gives you the want list of that person
 - `!wantlist {search term}` - Gives you the want list items that match that term 
+
+### Have List
+It's the same as Want List just with `!have`
