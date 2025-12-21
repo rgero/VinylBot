@@ -1,29 +1,28 @@
-import {ActionRowBuilder, ButtonBuilder, ButtonStyle, ComponentType, EmbedBuilder} from "discord.js";
+import { ActionRowBuilder, ButtonBuilder, ButtonStyle, ComponentType, EmbedBuilder } from "discord.js";
 
 import { escapeColons } from "../utils/escapeColons.js";
-import { getWantList } from "../google/GetWantList.js";
+import { getAlbumList } from "../google/GetAlbumList.js";
 import { isInList } from "../utils/userParser.js";
 
 const parseCommand = (messageArgs) => {
   const words = messageArgs.split(/\s+/).filter(Boolean);
-
   if (words.length === 0) return { type: "full", term: "" };
   if (words.length === 1 && isInList(words[0])) return { type: "user", term: words[0] };
-  return { type: "artist", term: messageArgs };
+  return { type: "search", term: messageArgs };
 };
 
-const generateEmbed = (wantList, page, totalPages, type, term, pageSize = 10) => {
+const generateEmbed = (list, page, totalPages, type, term, listType, pageSize = 10) => {
   const start = page * pageSize;
-  const pageItems = wantList.slice(start, start + pageSize);
+  const pageItems = list.slice(start, start + pageSize);
 
   const description = pageItems
     .map((item, idx) => `${start + idx + 1}. ${escapeColons(item[0])} - ${escapeColons(item[1])}`)
     .join("\n");
 
-  const title =
-    type === "full"
-      ? `The Want List (Page ${page + 1}/${totalPages})`
-      : `The Want List for "${term}" (Page ${page + 1}/${totalPages})`;
+  const listName = listType === "want" ? "Want List" : "Have List";
+  const title = type === "full"
+      ? `The ${listName} (Page ${page + 1}/${totalPages})`
+      : `The ${listName} for "${term}" (Page ${page + 1}/${totalPages})`;
 
   return new EmbedBuilder().setTitle(title).setDescription(description).setColor(0x1db954);
 };
@@ -42,31 +41,29 @@ const generateRow = (currentPage, totalPages) =>
       .setDisabled(currentPage === totalPages - 1)
   );
 
-export const ProcessWantList = async (message) => {
+export const ProcessList = async (message, listType) => {
   const args = message.content.split(" ").slice(1).join(" ").trim();
   const { type, term } = parseCommand(args);
 
-  const wantList = await getWantList({ type, term });
+  const list = await getAlbumList(listType, { type, term });
 
-  if (!wantList.length) {
-    message.reply("❌ There's nothing on the list.");
+  if (!list.length) {
+    message.reply(`❌ There's nothing on the ${listType} list.`);
     return;
   }
 
   const PAGE_SIZE = 10;
-  const totalPages = Math.ceil(wantList.length / PAGE_SIZE);
+  const totalPages = Math.ceil(list.length / PAGE_SIZE);
   let currentPage = 0;
 
-  // Send initial message
   const sentMessage = await message.reply({
-    embeds: [generateEmbed(wantList, currentPage, totalPages, type, term, PAGE_SIZE)],
+    embeds: [generateEmbed(list, currentPage, totalPages, type, term, listType, PAGE_SIZE)],
     components: [generateRow(currentPage, totalPages)],
   });
 
-  // Create a collector for button interactions
   const collector = sentMessage.createMessageComponentCollector({
     componentType: ComponentType.Button,
-    time: 5 * 60 * 1000, // 5 minutes timeout
+    time: 5 * 60 * 1000,
   });
 
   collector.on("collect", async (interaction) => {
@@ -79,17 +76,14 @@ export const ProcessWantList = async (message) => {
     else if (interaction.customId === "next") currentPage++;
 
     await interaction.update({
-      embeds: [generateEmbed(wantList, currentPage, totalPages, type, term, PAGE_SIZE)],
+      embeds: [generateEmbed(list, currentPage, totalPages, type, term, listType, PAGE_SIZE)],
       components: [generateRow(currentPage, totalPages)],
     });
   });
 
   collector.on("end", () => {
-    // Disable buttons after collector ends
-    const disabledRow = generateRow(currentPage, totalPages).setComponents(
-      generateRow(currentPage, totalPages).components.map((btn) => btn.setDisabled(true))
-    );
-
+    const disabledRow = generateRow(currentPage, totalPages);
+    disabledRow.components.forEach((btn) => btn.setDisabled(true));
     sentMessage.edit({ components: [disabledRow] }).catch(() => {});
   });
 };

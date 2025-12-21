@@ -2,10 +2,10 @@ import "dotenv/config";
 
 import { Client, GatewayIntentBits } from "discord.js";
 
+import { ProcessList } from "./discord/ProcessList.js";
 import { ProcessPlay } from "./discord/ProcessPlay.js";
 import { ProcessRandom } from "./discord/ProcessRandom.js";
 import { ProcessWant } from "./discord/ProcessWant.js";
-import { ProcessWantList } from "./discord/ProcessWantlist.js";
 
 const client = new Client({
   intents: [
@@ -42,7 +42,13 @@ client.on("messageCreate", async (message) => {
 
   if(targetMessage.startsWith("!wantlist"))
   {
-    ProcessWantList(message);
+    await ProcessList(message, 'want');
+    return
+  }
+
+  if(targetMessage.startsWith("!have"))
+  {
+    await ProcessList(message, 'have');
     return
   }
 
