@@ -2,142 +2,166 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { LogPlay } from "../../src/google/LogPlay.js";
 import { ProcessRandom } from "../../src/discord/ProcessRandom.js";
-import { getDropdownValue } from "../../src/utils/discordToDropdown.js";
 import { getRandomRow } from "../../src/google/GetRandomRow.js";
 
-// Mocks
-vi.mock("../../src/google/GetRandomRow.js");
-vi.mock("../../src/google/LogPlay.js");
-vi.mock("../../src/utils/discordToDropdown.js");
+// Mock external dependencies
+vi.mock("../../src/google/GetRandomRow.js", () => ({ getRandomRow: vi.fn() }));
+vi.mock("../../src/google/LogPlay.js", () => ({ LogPlay: vi.fn() }));
+vi.mock("../../src/utils/escapeColons.js", () => ({ escapeColons: (s) => s }));
+vi.mock("../../src/utils/discordToDropdown.js", () => ({ getDropdownValue: (s) => s }));
 
 describe("ProcessRandom", () => {
-  let message;
-  let sentMessage;
-  let collector;
+  let mockMessage;
+  let mockSentMessage;
+  let mockCollector;
 
   beforeEach(() => {
     vi.clearAllMocks();
+    
+    process.env.ALBUM_SHEET_NAME = "Albums";
+    process.env.LOCATIONS_SHEET_NAME = "Stores";
 
-    collector = {
+    // Mock Collector
+    mockCollector = {
       on: vi.fn(),
       stop: vi.fn(),
     };
 
-    sentMessage = {
-      createMessageComponentCollector: vi.fn(() => collector),
-      edit: vi.fn(),
+    // Mock the message sent by the bot
+    mockSentMessage = {
+      createMessageComponentCollector: vi.fn().mockReturnValue(mockCollector),
+      edit: vi.fn().mockResolvedValue({}),
     };
 
-    message = {
+    // Mock the incoming user message
+    mockMessage = {
       content: "!random",
-      author: { id: "user1", username: "TestUser" },
-      reply: vi.fn().mockResolvedValue(sentMessage),
+      author: { id: "user-123", username: "TestUser" },
+      reply: vi.fn().mockResolvedValue(mockSentMessage),
     };
-
-    getDropdownValue.mockImplementation((username) => username);
   });
 
-  it("replies with a random row when getRandomRow returns data", async () => {
-    getRandomRow.mockResolvedValue(["Artist1", "Album1"]);
+  it("should reply with an error message if no row is found", async () => {
+    vi.mocked(getRandomRow).mockResolvedValue(null);
 
-    await ProcessRandom(message);
+    await ProcessRandom(mockMessage);
 
-    expect(message.reply).toHaveBeenCalled();
-    const firstCall = message.reply.mock.calls[0][0];
-    expect(firstCall.embeds[0].title).toContain("🎲 Random Pick");
-    
-    const sent = message.reply.mock.calls[0][0];
-    const actionRow = sent.components[0];
-    const buttons = actionRow.components; // in discord.js v14, this is a plain array of ButtonBuilder
-    expect(buttons[0].data.label).toBe("▶️ Play");
-    expect(buttons[1].data.label).toBe("🔁 Reroll");
+    expect(mockMessage.reply).toHaveBeenCalledWith("❌ No matching entries found.");
   });
 
-  it("shows error if getRandomRow returns null", async () => {
-    getRandomRow.mockResolvedValue(null);
+  it("should send an album embed when no params are provided", async () => {
+    vi.mocked(getRandomRow).mockResolvedValue(["Rise Against", "Endgame"]);
 
-    await ProcessRandom(message);
+    await ProcessRandom(mockMessage);
 
-    expect(message.reply).toHaveBeenCalledWith("❌ No matching entries found.");
-  });
-
-  it("logs a play when play button is pressed", async () => {
-    getRandomRow.mockResolvedValue(["Artist1", "Album1"]);
-
-    await ProcessRandom(message);
-
-    // simulate play button interaction
-    const interaction = {
-      user: { id: "user1" },
-      customId: "play",
-      update: vi.fn(),
-      followUp: vi.fn(),
-    };
-
-    const collectCallback = collector.on.mock.calls.find(
-      (call) => call[0] === "collect"
-    )[1];
-
-    await collectCallback(interaction);
-
-    expect(LogPlay).toHaveBeenCalledWith("Artist1", "Album1", "TestUser");
-    expect(interaction.update).toHaveBeenCalledWith({
-      embeds: expect.any(Array),
-      components: [],
-    });
-    expect(interaction.followUp).toHaveBeenCalledWith({
-      content: "▶️ **Play logged:** Artist1 — *Album1*",
-    });
-  });
-
-  it("rerolls when reroll button is pressed", async () => {
-    getRandomRow
-      .mockResolvedValueOnce(["Artist1", "Album1"])
-      .mockResolvedValueOnce(["Artist2", "Album2"]);
-
-    await ProcessRandom(message);
-
-    const interaction = {
-      user: { id: "user1" },
-      customId: "reroll",
-      update: vi.fn(),
-      reply: vi.fn(),
-    };
-
-    const collectCallback = collector.on.mock.calls.find(
-      (call) => call[0] === "collect"
-    )[1];
-
-    await collectCallback(interaction);
-
-    expect(interaction.update).toHaveBeenCalledWith({
-      embeds: expect.any(Array),
-      components: expect.any(Array),
+    expect(getRandomRow).toHaveBeenCalledWith({
+      sheetName: "Albums",
+      filterColumnIndex: null,
+      filterValue: null,
     });
 
-    const newEmbed = interaction.update.mock.calls[0][0].embeds[0];
-    expect(newEmbed.description).toContain("Artist2");
+    expect(mockMessage.reply).toHaveBeenCalledWith(
+      expect.objectContaining({
+        embeds: [expect.objectContaining({ title: "🎲 Random Pick" })],
+      })
+    );
   });
 
-  it("prevents other users from using buttons", async () => {
-    getRandomRow.mockResolvedValue(["Artist1", "Album1"]);
-    await ProcessRandom(message);
+  it("should use store sheet when 'store' param is provided", async () => {
+    mockMessage.content = "!random store";
+    vi.mocked(getRandomRow).mockResolvedValue(["Music Store", "123 Street"]);
 
-    const interaction = {
-      user: { id: "otherUser" },
-      customId: "play",
-      reply: vi.fn(),
-    };
+    await ProcessRandom(mockMessage);
 
-    const collectCallback = collector.on.mock.calls.find(
-      (call) => call[0] === "collect"
-    )[1];
+    expect(getRandomRow).toHaveBeenCalledWith(expect.objectContaining({
+      sheetName: "Stores"
+    }));
+  });
 
-    await collectCallback(interaction);
+  it("should apply filter when a genre/param is provided", async () => {
+    mockMessage.content = "!random punk";
+    vi.mocked(getRandomRow).mockResolvedValue(["NOFX", "Punk in Drublic"]);
 
-    expect(interaction.reply).toHaveBeenCalledWith({
-      content: "You can't use these buttons.",
-      ephemeral: true,
+    await ProcessRandom(mockMessage);
+
+    expect(getRandomRow).toHaveBeenCalledWith(expect.objectContaining({
+      filterColumnIndex: 9,
+      filterValue: "punk"
+    }));
+  });
+
+  describe("Collector Interactions", () => {
+    let collectCallback;
+
+    beforeEach(async () => {
+      vi.mocked(getRandomRow).mockResolvedValue(["Artist", "Album"]);
+      await ProcessRandom(mockMessage);
+      // Grab the callback function passed to collector.on('collect', ...)
+      collectCallback = mockCollector.on.mock.calls.find(call => call[0] === "collect")[1];
     });
+
+    it("should ignore interactions from different users", async () => {
+      const mockInteraction = {
+        user: { id: "wrong-user" },
+        reply: vi.fn(),
+        ephemeral: true,
+      };
+
+      await collectCallback(mockInteraction);
+
+      expect(mockInteraction.reply).toHaveBeenCalledWith(expect.objectContaining({
+        content: "You can't use these buttons."
+      }));
+    });
+
+    it("should log play and stop collector when 'play' is clicked", async () => {
+      const mockInteraction = {
+        user: { id: "user-123" },
+        customId: "play",
+        update: vi.fn(),
+        followUp: vi.fn(),
+      };
+
+      await collectCallback(mockInteraction);
+
+      expect(LogPlay).toHaveBeenCalledWith("Artist", "Album", "TestUser");
+      expect(mockInteraction.update).toHaveBeenCalled();
+      expect(mockCollector.stop).toHaveBeenCalled();
+    });
+
+    it("should fetch a new row when 'reroll' is clicked", async () => {
+      const mockInteraction = {
+        user: { id: "user-123" },
+        customId: "reroll",
+        update: vi.fn(),
+      };
+
+      vi.mocked(getRandomRow).mockResolvedValue(["New Artist", "New Album"]);
+
+      await collectCallback(mockInteraction);
+
+      expect(getRandomRow).toHaveBeenCalledTimes(2); // Initial + Reroll
+      expect(mockInteraction.update).toHaveBeenCalledWith(expect.objectContaining({
+        embeds: [expect.objectContaining({ description: expect.stringContaining("New Artist") })]
+      }));
+    });
+  });
+
+  it("should disable buttons when the collector ends", async () => {
+    vi.mocked(getRandomRow).mockResolvedValue(["Artist", "Album"]);
+    await ProcessRandom(mockMessage);
+
+    const endCallback = mockCollector.on.mock.calls.find(call => call[0] === "end")[1];
+    await endCallback();
+
+    expect(mockSentMessage.edit).toHaveBeenCalledWith(expect.objectContaining({
+      components: expect.arrayContaining([
+        expect.objectContaining({
+          components: expect.arrayContaining([
+            expect.objectContaining({ data: expect.objectContaining({ disabled: true }) })
+          ])
+        })
+      ])
+    }));
   });
 });
