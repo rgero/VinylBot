@@ -13,6 +13,7 @@ export const ProcessWant = async (message) => {
   const parsed = parseSpotifyUrl(spotifyLink);
   if (!parsed) return;
   try {
+    await new Promise(resolve => setTimeout(resolve, 750));
     await message.suppressEmbeds(true);
     const {artists, albumName, albumArt, releaseDate, totalTracks} = await getSpotifyData(parsed);
     const requester = message.author?.username || "Unknown";
