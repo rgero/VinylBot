@@ -54,12 +54,7 @@ export const ProcessRandom = async (message) => {
     filterValue = param;
   }
 
-  const fetchRow = async () =>
-    getRandomRow({
-      sheetName,
-      filterColumnIndex,
-      filterValue,
-    });
+  const fetchRow = async () => getRandomRow({sheetName, filterColumnIndex, filterValue});
 
   try {
     let row = await fetchRow();
