@@ -1,6 +1,6 @@
 export interface PlayLog {
   id: string,
   album: string,
-  listener: string,
+  listeners: string[],
   date: Date
 }
