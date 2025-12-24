@@ -45,8 +45,8 @@ describe("checkIfAlbumExists", () => {
     valuesGetMock.mockResolvedValueOnce({
       data: {
         values: [
-          ["Purchase", "Artist", "Album"],
-          [0, "Gojira", "From Mars to Sirius"],
+          ["Artist", "Album"],
+          ["Gojira", "From Mars to Sirius"],
         ],
       },
     });

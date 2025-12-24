@@ -14,7 +14,7 @@ export const getRandomRow = async ({sheetName = null, filterColumnIndex = null, 
   if (sheetName === null || sheetName === process.env.ALBUM_SHEET_NAME)
   {
     dataRows = dataRows.filter(
-      (row) => row[3] != ""
+      (row) => row[2] != ""
     )
   } else if (sheetName === process.env.LOCATIONS_SHEET_NAME)
   {

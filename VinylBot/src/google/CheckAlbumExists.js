@@ -8,8 +8,8 @@ export const checkIfAlbumExists = async (sheetName, artist, album) => {
   const normalizedAlbum = normalizeString(album);
 
   const alreadyExists = rows.some((row) => {
-    const rowArtist = normalizeString(row[1]);
-    const rowAlbum = normalizeString(row[2]);
+    const rowArtist = normalizeString(row[0]);
+    const rowAlbum = normalizeString(row[1]);
     return rowArtist === normalizedArtist && rowAlbum === normalizedAlbum;
   });
   return alreadyExists;
