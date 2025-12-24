@@ -9,7 +9,7 @@ export const getData = async (sheetName = process.env.ALBUM_SHEET_NAME) => {
     range: sheetName,
   });
 
-  const rows = res.data.values;
+  let rows = res.data.values;
 
   if (!rows || rows.length <= 1) return [];
 
