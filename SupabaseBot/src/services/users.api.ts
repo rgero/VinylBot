@@ -7,3 +7,11 @@ export const getUsers = async (): Promise<User[]> => {
 
   return data ?? [];
 }
+
+export const getUserByName = async (name: string): Promise<User|null> => {
+  const {data, error} = await supabase.from('users').select('*').eq("name", name).single();
+  if (error) console.log(error);
+
+  console.log(data);
+  return data ?? null;
+}
