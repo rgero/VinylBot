@@ -1,10 +1,11 @@
 import { Location } from "../interfaces/Location";
 import supabase from "./supabase";
 
-export const getLocations = async () => {
+export const getLocations = async (): Promise<Location[]> => {
   const { data, error } = await supabase.from('locations').select('*');
   if (error) console.error(error);
-  else console.log(data);
+
+  return data ?? [];
 }
 
 export const addLocation = async (newLocation: Location) => {

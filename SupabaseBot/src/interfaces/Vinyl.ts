@@ -1,9 +1,11 @@
 
 export interface Vinyl {
+  id?: string;
+  purchaseNumber: number;
   artist: string;
   album: string;
-  datePurchased: Date;
-  purchaseLocationId: string;
+  purchaseDate: Date;
+  purchaseLocation: string;
   price: number;
   owner: string[];
   length: number;
