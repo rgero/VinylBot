@@ -1,0 +1,31 @@
+import { getAlbumArtFromSpotify } from "../services/spotify.api";
+import supabase from "../services/supabase";
+
+async function populateAlbumArt(): Promise<void>
+{
+  const { data: albums, error } = await supabase.from("wanted_items").select("id, artist, album, imageUrl");
+
+  if (error) {
+    throw new Error(`Supabase fetch error: ${error.message}`);
+  }
+
+  let albumsToFix = albums?.filter(album => !album.imageUrl || album.imageUrl.trim() === "");
+  if (!albumsToFix || albumsToFix.length === 0) {
+    console.log("No albums need album art");
+    return;
+  }
+
+  for (const album of albumsToFix) {
+    try {
+      const albumArtUrl = await getAlbumArtFromSpotify(album.artist, album.album);
+      console.log(albumArtUrl);
+      if (albumArtUrl) {
+        const { error: updateError } = await supabase.from("wanted_items").update({ imageUrl: albumArtUrl }).eq("id", album.id);
+      }
+    } catch (error) {
+      console.error(`Error fetching album art for ${album.artist} - ${album.album}:`, error);
+    }
+  }
+}
+
+populateAlbumArt().catch(console.error);
