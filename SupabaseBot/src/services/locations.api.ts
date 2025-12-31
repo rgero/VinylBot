@@ -8,6 +8,20 @@ export const getLocations = async (): Promise<Location[]> => {
   return data ?? [];
 }
 
+export const getPhysicalLocations = async (): Promise<Location[]> => {
+  const { data, error } = await supabase
+    .from("locations")
+    .select("*")
+    .not("address", "is", null)
+    .neq("address", "");
+
+  if (error) {
+    console.error(error);
+    return [];
+  }
+  return data ?? [];
+};
+
 export const addLocation = async (newLocation: Location) => {
   const { data, error } = await supabase.from('locations').insert([newLocation]);
   if (error) console.error(error);

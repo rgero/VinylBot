@@ -8,6 +8,20 @@ export const getVinyls = async (): Promise<Vinyl[]> => {
   return data ?? [];
 }
 
+export const getVinylsLikedByUserID = async (userID: string): Promise<Vinyl[]> => {
+  const { data, error } = await supabase
+    .from('vinyls')
+    .select('*')
+    .contains("likedBy", [userID]);
+
+  if (error) {
+    console.error(error);
+    return [];
+  }
+  return data ?? [];
+}
+
+
 export const addVinyl = async (newVinyl: Vinyl) => {
   const { data, error } = await supabase.from('vinyls').insert([newVinyl]);
   if (error) console.error(error);
