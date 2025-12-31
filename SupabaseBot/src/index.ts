@@ -2,6 +2,7 @@ import "dotenv/config";
 
 import { Client, GatewayIntentBits, Message } from "discord.js";
 
+import { ProcessList } from "./discord/ProcessList";
 import { ProcessRandomAlbum } from "./discord/ProcessRandomAlbum";
 import { ProcessRandomStore } from "./discord/ProcessRandomStore";
 import { ProcessWant } from "./discord/ProcessWant";
@@ -46,15 +47,15 @@ client.on("messageCreate", async (message: Message) => {
     return;
   }
 
-  if(targetMessage.startsWith("!wantlist"))
+  if(targetMessage.startsWith("!2wantlist"))
   {
-    // await ProcessList(message, 'want');
+    await ProcessList(message, 'want');
     return
   }
 
-  if(targetMessage.startsWith("!have"))
+  if(targetMessage.startsWith("!2have"))
   {
-    // await ProcessList(message, 'have');
+    await ProcessList(message, 'have');
     return
   }
 });

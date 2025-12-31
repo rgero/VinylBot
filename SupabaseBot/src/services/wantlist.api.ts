@@ -1,14 +1,29 @@
 import { WantedItem } from "../interfaces/WantedItem";
 import supabase from "./supabase";
 
+/* Get the Wanted Items*/
 export const getWantedItems = async () => {
   const { data, error } = await supabase.from('wanted_items').select('*');
   if (error) console.error(error);
   else console.log(data);
 }
 
-export type AddStatus = "ADDED" | "DUPLICATE" | "ERROR";
+export const getWantList = async (query: { type: string; term: string }): Promise<[string, string][]> => {
+  let dbQuery = supabase.from('wanted_items').select('artist, album');
 
+  if (query.type === 'user') {
+    dbQuery = dbQuery.contains('searcher', [query.term]);
+  } else if (query.type === 'search') {
+    dbQuery = dbQuery.or(`artist.ilike.%${query.term}%,album.ilike.%${query.term}%`);
+  }
+
+  const { data, error } = await dbQuery;
+  if (error) throw error;
+  return (data || []).map(item => [item.artist, item.album]);
+};
+
+
+export type AddStatus = "ADDED" | "DUPLICATE" | "ERROR";
 export const addWantedItem = async (newWantedItem: WantedItem): Promise<AddStatus> => {
   // Wanted Items now has a unique constraint that the Artist + Album together must be unique.
   // Apparently this will return an error code of 23505 if violated.
@@ -42,15 +57,4 @@ export const updateWantedItem = async (wantlistitemId: string, updatedWantedItem
   const { data, error } = await supabase.from('wanted_items').update(updatedWantedItem).eq('id', wantlistitemId);
   if (error) console.error(error);
   else console.log(data);
-}
-
-export const findWantedItem = async (wantlistitem : Partial<WantedItem>) => {
-  let query = supabase.from('wanted_items').select('*');
-  
-  for (const key in wantlistitem) {
-    const value = (wantlistitem as any)[key];
-    query = query.eq(key, value);
-  }
-  const { data } = await query;
-  return data;
 }

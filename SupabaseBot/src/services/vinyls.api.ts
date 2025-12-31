@@ -21,6 +21,19 @@ export const getVinylsLikedByUserID = async (userID: string): Promise<Vinyl[]> =
   return data ?? [];
 }
 
+export const getVinylsByQuery = async (query: { type: string; term: string }): Promise<[string, string][]> => {
+  let dbQuery = supabase.from('vinyls').select('artist, album');
+
+  if (query.type === 'user') {
+    dbQuery = dbQuery.contains('owner', [query.term]);
+  } else if (query.type === 'search') {
+    dbQuery = dbQuery.or(`artist.ilike.%${query.term}%,album.ilike.%${query.term}%`);
+  }
+
+  const { data, error } = await dbQuery;
+  if (error) throw error;
+  return (data || []).map(item => [item.artist, item.album]);
+};
 
 export const addVinyl = async (newVinyl: Vinyl) => {
   const { data, error } = await supabase.from('vinyls').insert([newVinyl]);
@@ -42,18 +55,6 @@ export const deleteVinyl = async (vinylId: string) => {
 
 export const updateVinyl = async (vinylId: string, updatedVinyl: Partial<Vinyl>) => {
   const { data, error } = await supabase.from('vinyls').update(updatedVinyl).eq('id', vinylId);
-  if (error) console.error(error);
-  else console.log(data);
-}
-
-export const findVinyl = async (vinyl : Partial<Vinyl>) => {
-  let query = supabase.from('vinyls').select('*');
-  
-  for (const key in vinyl) {
-    const value = (vinyl as any)[key];
-    query = query.eq(key, value);
-  }
-  const { data, error } = await query;
   if (error) console.error(error);
   else console.log(data);
 }
