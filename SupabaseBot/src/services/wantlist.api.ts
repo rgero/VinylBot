@@ -7,15 +7,24 @@ export const getWantedItems = async () => {
   else console.log(data);
 }
 
-export const addWantedItem = async (newWantedItem: WantedItem): Promise<boolean> => {
+export type AddStatus = "ADDED" | "DUPLICATE" | "ERROR";
+
+export const addWantedItem = async (newWantedItem: WantedItem): Promise<AddStatus> => {
+  // Wanted Items now has a unique constraint that the Artist + Album together must be unique.
+  // Apparently this will return an error code of 23505 if violated.
   const { error } = await supabase.from('wanted_items').insert([newWantedItem]);
-  if (error)
-  {
-    console.error(error);
-    return false;
+
+  if (error) {
+    if (error.code === '23505') {
+      return "DUPLICATE";
+    }
+    
+    console.error("Supabase Error:", error.message);
+    return "ERROR";
   }
-  return true;
-}
+  
+  return "ADDED";
+};
 
 export const addWantedItems = async (newWantedItems: WantedItem[]) => {
   const { data, error } = await supabase.from('wanted_items').insert(newWantedItems);

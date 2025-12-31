@@ -2,7 +2,6 @@ import { EmbedBuilder, Message } from "discord.js";
 import { addWantedItem, findWantedItem } from "../services/wantlist.api";
 
 import { SpotifyUrl } from "../interfaces/spotify/SpotifyUrl";
-import { WantedItem } from "../interfaces/WantedItem";
 import { escapeColons } from "../utils/escapeColons";
 import { getDropdownValue } from "../utils/discordToDropdown";
 import { getSpotifyData } from "../spotify/getSpotifyData";
@@ -11,69 +10,51 @@ import { parseSpotifyUrl } from "../spotify/parseSpotifyUrl";
 
 export const ProcessWant = async (message: Message) => {
   const args = message.content.split(" ").slice(1).join(" ").trim();
-  const spotifyLink = args.split(" ")[0]
-  const notes = args.split(" ").slice(1).join(" ").trim();
+  const [spotifyLink, ...notesArray] = args.split(" ");
+  const notes = notesArray.join(" ").trim();
 
-  const parsed: SpotifyUrl|null = parseSpotifyUrl(spotifyLink);
+  const parsed: SpotifyUrl | null = parseSpotifyUrl(spotifyLink);
   if (!parsed) return;
+
   try {
-    await new Promise(resolve => setTimeout(resolve, 750));
     await message.suppressEmbeds(true);
-    const {artists, albumName, albumArt, releaseDate, totalTracks} = await getSpotifyData(parsed);
-    const requester = message.author?.username || "Unknown";
-    const mappedRequester = getDropdownValue(requester);
+    const [spotifyData, userID] = await Promise.all([
+      getSpotifyData(parsed),
+      getUserByName(getDropdownValue(message.author?.username || "Unknown"))
+    ]);
 
-    const userID = await getUserByName(mappedRequester);
     if (!userID) {
-      return;
+      return message.reply("⚠️ User not found in system.");
     }
 
-    const searchItem: Partial<WantedItem> = {
-      artist: artists,
-      album: albumName,
-      imageUrl: albumArt,
-      notes
-    }
+    const { artists, albumName, albumArt, releaseDate, totalTracks } = spotifyData;
 
-    // Check if it is in the list
-    const isInList = await findWantedItem(searchItem);
-    let added = false;
-    if (isInList && isInList.length == 0)
-    {
-      console.log("Butts");
-      const newItem: WantedItem = {
-        artist: artists,
-        album: albumName,
-        imageUrl: albumArt,
-        notes,
-        searcher: [userID.id]
-      }
-      added = await addWantedItem(newItem);
+    const status = await addWantedItem({artist: artists, album: albumName,imageUrl: albumArt,notes,searcher: [userID.id]});
+    if (status === "ERROR") {
+      return message.reply("❌ System error: Could not save to database.");
     }
+    const isDuplicate = status === "DUPLICATE";
+    
+    const mappedRequester = getDropdownValue(message.author?.username);
 
-    let embed: EmbedBuilder = new EmbedBuilder()
-    if (!added)
-    {
-      embed.setTitle(`Error adding album - ${albumName}`)
-    } else {
-      embed.setTitle(isInList ? `✅ Added: ${escapeColons(albumName)}` : `⚠️ Already on the list`)
-    }
-
-    embed.setDescription(escapeColons(artists))
-      .setColor(added ? 0x1db954 : 0xf1c40f)
+    const embed = new EmbedBuilder()
+      .setTitle(isDuplicate ? `⚠️ Already Listed: ${escapeColons(albumName)}` : `✅ Added: ${escapeColons(albumName)}`)
+      .setDescription(escapeColons(artists))
+      .setColor(isDuplicate ? 0xf1c40f : 0x1db954)
       .setThumbnail(albumArt)
       .setURL(`https://open.spotify.com/${parsed.type}/${parsed.id}`)
       .addFields(
         { name: "Release Date", value: releaseDate || "N/A", inline: true },
         { name: "Tracks", value: `${totalTracks || "N/A"}`, inline: true },
         { name: "Requested By", value: mappedRequester, inline: true },
-        { name: "Notes", value: notes, inline: true }
+        { name: "Notes", value: notes || "None", inline: false }
       );
 
-    message.reply({ embeds: [embed] });
+    await message.reply({ embeds: [embed] });
 
   } catch (err) {
-    console.error(err);
-    message.reply("❌ Failed to fetch Spotify data or write to Google Sheet.");
+    console.error("ProcessWant Error:", err);
+    const errorMsg = err instanceof Error ? err.message : "Unknown error";
+    message.reply(`❌ Error: ${errorMsg}`);
   }
 };
