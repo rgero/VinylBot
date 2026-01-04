@@ -15,7 +15,7 @@ export const migrateVinyls = async (): Promise<void> => {
     if (rows.length === 0) return;
 
     const itemsToMigrate: Vinyl[] = rows.map((row) => {
-      const [purchaseNum, artist, album, date, loc, price, owners, len, notes, plays, likes] = row;
+      const [purchaseNum, artist, album, date, loc, price, owners, len, notes, plays, likes, color] = row;
 
       let likedByArray: string[] = [];
       const likesSplit = String(likes).split(",");
@@ -38,6 +38,7 @@ export const migrateVinyls = async (): Promise<void> => {
         notes: notes ?? "",
         playCount: parseInt(plays) || 0,
         likedBy: likedByArray ?? [],
+        color: color?.trim() || ""
       };
     });
 
