@@ -1,4 +1,4 @@
-import { getUsers } from "../services/users.api";
+import { getUsers } from "../services/users.api.js";
 
 export const resolveUserMap = async (): Promise<Map<string, string[]>> => {
   const userList = await getUsers();

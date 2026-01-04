@@ -1,8 +1,8 @@
-import { Vinyl } from "../interfaces/Vinyl";
-import { addVinyls } from "../services/vinyls.api";
-import { getSheetRows } from "../utils/google/sheetUtils";
-import { resolveLocationMap } from "../utils/resolveLocationMap";
-import { resolveUserMap } from "../utils/resolveUserMap";
+import { Vinyl } from "../interfaces/Vinyl.js";
+import { addVinyls } from "../services/vinyls.api.js";
+import { getSheetRows } from "../utils/google/sheetUtils.js";
+import { resolveLocationMap } from "../utils/resolveLocationMap.js";
+import { resolveUserMap } from "../utils/resolveUserMap.js";
 
 export const migrateVinyls = async (): Promise<void> => {
   try {

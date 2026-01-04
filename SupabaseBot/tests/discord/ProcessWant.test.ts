@@ -1,13 +1,13 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { ProcessWant } from "../../src/discord/ProcessWant";
-import {addWantedItem} from "../../src/services/wantlist.api";
-import { createMessage } from "../MockedMessage";
-import { escapeColons } from "../../src/utils/escapeColons";
-import { getDropdownValue } from "../../src/utils/discordToDropdown";
+import { ProcessWant } from "../../src/discord/ProcessWant.js";
+import {addWantedItem} from "../../src/services/wantlist.api.js";
+import { createMessage } from "../MockedMessage.js";
+import { escapeColons } from "../../src/utils/escapeColons.js";
+import { getDropdownValue } from "../../src/utils/discordToDropdown.js";
 import {getUserByName} from '../../src/services/users.api';
-import { parseSpotifyUrl } from "../../src/spotify/parseSpotifyUrl";
-import { spotifyGet } from "../../src/services/spotify.api";
+import { parseSpotifyUrl } from "../../src/spotify/parseSpotifyUrl.js";
+import { spotifyGet } from "../../src/services/spotify.api.js";
 
 vi.mock("discord.js", () => {
   return {

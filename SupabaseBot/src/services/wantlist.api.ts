@@ -1,6 +1,6 @@
-import { SearchResponse } from "../interfaces/SearchResponse";
-import { WantedItem } from "../interfaces/WantedItem";
-import supabase from "./supabase";
+import { SearchResponse } from "../interfaces/SearchResponse.js";
+import { WantedItem } from "../interfaces/WantedItem.js";
+import supabase from "./supabase.js";
 
 /* Get the Wanted Items*/
 export const getWantedItems = async () => {

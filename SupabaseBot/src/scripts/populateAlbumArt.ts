@@ -1,5 +1,5 @@
-import { getAlbumArtFromSpotify } from "../services/spotify.api";
-import supabase from "../services/supabase";
+import { getAlbumArtFromSpotify } from "../services/spotify.api.js";
+import supabase from "../services/supabase.js";
 
 export async function populateAlbumArt(): Promise<void>
 {

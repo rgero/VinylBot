@@ -1,10 +1,10 @@
 import {ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, ComponentType, EmbedBuilder, Message} from "discord.js";
 
-import { SearchResponse } from "../interfaces/SearchResponse";
-import { escapeColons } from "../utils/escapeColons";
-import { getVinylsByQuery } from "../services/vinyls.api";
-import { getWantList } from "../services/wantlist.api";
-import { parseCommand } from "../utils/parseCommand";
+import { SearchResponse } from "../interfaces/SearchResponse.js";
+import { escapeColons } from "../utils/escapeColons.js";
+import { getVinylsByQuery } from "../services/vinyls.api.js";
+import { getWantList } from "../services/wantlist.api.js";
+import { parseCommand } from "../utils/parseCommand.js";
 
 const generateEmbed = (list: SearchResponse[], page: number, totalPages: number, type: string, term: string, listType: 'want' | 'have', pageSize = 10) => {
   const start = page * pageSize;

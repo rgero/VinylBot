@@ -1,5 +1,5 @@
-import { getUserByName } from "../services/users.api";
-import { isInList } from "./userParser";
+import { getUserByName } from "../services/users.api.js";
+import { isInList } from "./userParser.js";
 
 export interface CommandContext {
   type: "full" | "user" | "search";

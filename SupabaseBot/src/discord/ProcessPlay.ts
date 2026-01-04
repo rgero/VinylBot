@@ -1,14 +1,14 @@
 import {ActionRowBuilder, ComponentType, Message, MessageActionRowComponentBuilder, StringSelectMenuBuilder} from "discord.js";
 
-import { PlayLog } from "../interfaces/PlayLog";
-import { SearchResponse } from "../interfaces/SearchResponse";
-import { User } from "../interfaces/User";
-import { getDropdownValue } from "../utils/discordToDropdown";
-import { getSpotifyData } from "../spotify/getSpotifyData";
-import { getUserByName } from "../services/users.api";
-import { getVinylsByQuery } from "../services/vinyls.api";
-import { parseSpotifyUrl } from "../spotify/parseSpotifyUrl";
-import { processNewPlay } from "../actions/processNewPlay";
+import { PlayLog } from "../interfaces/PlayLog.js";
+import { SearchResponse } from "../interfaces/SearchResponse.js";
+import { User } from "../interfaces/User.js";
+import { getDropdownValue } from "../utils/discordToDropdown.js";
+import { getSpotifyData } from "../spotify/getSpotifyData.js";
+import { getUserByName } from "../services/users.api.js";
+import { getVinylsByQuery } from "../services/vinyls.api.js";
+import { parseSpotifyUrl } from "../spotify/parseSpotifyUrl.js";
+import { processNewPlay } from "../actions/processNewPlay.js";
 
 export const ProcessPlay = async (message: Message) => {
   const params = message.content.split(" ").slice(1).join(" ").trim();

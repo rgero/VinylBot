@@ -1,4 +1,4 @@
-import { SPREADSHEET_ID, sheets } from "./googleSheetsClient";
+import { SPREADSHEET_ID, sheets } from "./googleSheetsClient.js";
 
 export async function getSheetRows(range: string) {
   const response = await sheets.spreadsheets.values.get({

@@ -1,7 +1,7 @@
-import { PlayLog } from "../interfaces/PlayLog";
-import { addPlayLogs } from "../services/plays.api";
-import { getSheetRowsWithMetadata } from "../utils/google/sheetUtils";
-import { resolveUserMap } from "../utils/resolveUserMap";
+import { PlayLog } from "../interfaces/PlayLog.js";
+import { addPlayLogs } from "../services/plays.api.js";
+import { getSheetRowsWithMetadata } from "../utils/google/sheetUtils.js";
+import { resolveUserMap } from "../utils/resolveUserMap.js";
 
 /**
  * Returns true if the row contains at least one meaningful value

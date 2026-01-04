@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { escapeColons } from "../../src/utils/escapeColons"
+import { escapeColons } from "../../src/utils/escapeColons.js"
 
 describe("extraColon", () => {
   it("returns correct string when escaped", () => {

@@ -1,6 +1,6 @@
-import { Location } from "../interfaces/Location";
-import { addLocations } from "../services/locations.api";
-import { getSheetRows } from "../utils/google/sheetUtils";
+import { Location } from "../interfaces/Location.js";
+import { addLocations } from "../services/locations.api.js";
+import { getSheetRows } from "../utils/google/sheetUtils.js";
 
 export async function migrateLocations(): Promise<void> {
   try {

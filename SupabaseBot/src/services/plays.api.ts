@@ -1,5 +1,5 @@
-import { PlayLog } from "../interfaces/PlayLog";
-import supabase from "./supabase";
+import { PlayLog } from "../interfaces/PlayLog.js";
+import supabase from "./supabase.js";
 
 export const getPlayLogs = async (): Promise<PlayLog[]> => {
   const { data, error } = await supabase.from('playlogs').select('*');

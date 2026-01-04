@@ -3,3 +3,5 @@ node_modules
 .env
 service-account.json
 discordMapping.json
+
+dist/

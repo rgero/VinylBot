@@ -1,5 +1,5 @@
-import { User } from "../interfaces/User";
-import supabase from "./supabase";
+import { User } from "../interfaces/User.js";
+import supabase from "./supabase.js";
 
 export const getUsers = async (): Promise<User[]> => {
   const { data, error } = await supabase.from('users').select('*');

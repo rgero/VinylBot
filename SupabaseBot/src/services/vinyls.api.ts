@@ -1,6 +1,6 @@
-import { SearchResponse } from "../interfaces/SearchResponse";
-import { Vinyl } from "../interfaces/Vinyl";
-import supabase from "./supabase";
+import { SearchResponse } from "../interfaces/SearchResponse.js";
+import { Vinyl } from "../interfaces/Vinyl.js";
+import supabase from "./supabase.js";
 
 /**
  * FETCHERS

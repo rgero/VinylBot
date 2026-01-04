@@ -1,4 +1,4 @@
-import { getLocations } from "../services/locations.api";
+import { getLocations } from "../services/locations.api.js";
 
 export const resolveLocationMap = async (): Promise<Map<string, string>> => {
   const locationList = await getLocations();

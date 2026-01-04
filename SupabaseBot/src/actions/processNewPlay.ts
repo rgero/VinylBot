@@ -1,8 +1,8 @@
-import { getVinylByDetails, updateVinyl } from "../services/vinyls.api";
+import { getVinylByDetails, updateVinyl } from "../services/vinyls.api.js";
 
-import { PlayLog } from "../interfaces/PlayLog";
-import { Vinyl } from "../interfaces/Vinyl";
-import { addPlayLog } from "../services/plays.api";
+import { PlayLog } from "../interfaces/PlayLog.js";
+import { Vinyl } from "../interfaces/Vinyl.js";
+import { addPlayLog } from "../services/plays.api.js";
 
 export const processNewPlay = async (newPlay: PlayLog) => {
   const targetAlbum: Vinyl | null = await getVinylByDetails(newPlay.artist, newPlay.album);

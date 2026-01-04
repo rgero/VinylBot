@@ -1,7 +1,7 @@
-import { WantedItem } from "../interfaces/WantedItem";
-import { addWantedItems } from "../services/wantlist.api";
-import { getSheetRowsWithMetadata } from "../utils/google/sheetUtils";
-import { resolveUserMap } from "../utils/resolveUserMap";
+import { WantedItem } from "../interfaces/WantedItem.js";
+import { addWantedItems } from "../services/wantlist.api.js";
+import { getSheetRowsWithMetadata } from "../utils/google/sheetUtils.js";
+import { resolveUserMap } from "../utils/resolveUserMap.js";
 
 export async function migrateWantlist(): Promise<void> {
   try {

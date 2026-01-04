@@ -1,13 +1,13 @@
 import {ActionRowBuilder, ButtonBuilder, ButtonStyle, ComponentType, Message, MessageActionRowComponentBuilder} from "discord.js";
-import { getVinyls, getVinylsLikedByUserID } from "../services/vinyls.api";
+import { getVinyls, getVinylsLikedByUserID } from "../services/vinyls.api.js";
 
-import { PlayLog } from "../interfaces/PlayLog";
-import { User } from "../interfaces/User";
-import { Vinyl } from "../interfaces/Vinyl";
-import { escapeColons } from "../utils/escapeColons";
-import { getDropdownValue } from "../utils/discordToDropdown";
-import { getUserByName } from "../services/users.api";
-import { processNewPlay } from "../actions/processNewPlay";
+import { PlayLog } from "../interfaces/PlayLog.js";
+import { User } from "../interfaces/User.js";
+import { Vinyl } from "../interfaces/Vinyl.js";
+import { escapeColons } from "../utils/escapeColons.js";
+import { getDropdownValue } from "../utils/discordToDropdown.js";
+import { getUserByName } from "../services/users.api.js";
+import { processNewPlay } from "../actions/processNewPlay.js";
 
 const buildEmbed = (artist: string, album: string) => {
   const description = `🎵 **${artist}**\n💿 *${album}*`;

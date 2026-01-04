@@ -2,11 +2,11 @@ import "dotenv/config";
 
 import { Client, GatewayIntentBits, Message } from "discord.js";
 
-import { ProcessList } from "./discord/ProcessList";
-import { ProcessPlay } from "./discord/ProcessPlay";
-import { ProcessRandomAlbum } from "./discord/ProcessRandomAlbum";
-import { ProcessRandomStore } from "./discord/ProcessRandomStore";
-import { ProcessWant } from "./discord/ProcessWant";
+import { ProcessList } from "./discord/ProcessList.js";
+import { ProcessPlay } from "./discord/ProcessPlay.js";
+import { ProcessRandomAlbum } from "./discord/ProcessRandomAlbum.js";
+import { ProcessRandomStore } from "./discord/ProcessRandomStore.js";
+import { ProcessWant } from "./discord/ProcessWant.js";
 
 const client: Client = new Client({
   intents: [
