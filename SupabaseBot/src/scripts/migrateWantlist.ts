@@ -3,7 +3,7 @@ import { addWantedItems } from "../services/wantlist.api";
 import { getSheetRowsWithMetadata } from "../utils/google/sheetUtils";
 import { resolveUserMap } from "../utils/resolveUserMap";
 
-async function migrateWantlist(): Promise<void> {
+export async function migrateWantlist(): Promise<void> {
   try {
     // Fetch data and user map in parallel
     const [rowData, userMap] = await Promise.all([
@@ -44,4 +44,6 @@ async function migrateWantlist(): Promise<void> {
   }
 }
 
-migrateWantlist().catch(console.error);
+if (require.main === module) {
+  migrateWantlist().catch(console.error);
+}

@@ -2,15 +2,24 @@ import { Location } from "../interfaces/Location";
 import { addLocations } from "../services/locations.api";
 import { getSheetRows } from "../utils/google/sheetUtils";
 
-async function migrateLocations(): Promise<void> {
+export async function migrateLocations(): Promise<void> {
   try {
     const rows = await getSheetRows("Location Info!A2:E");
 
     const storesToMigrate: Location[] = rows.map((row) => {
       const [name, address, recommendedRaw, totalPurchased, notes] = row;
       
-      const recString = String(recommendedRaw).toLowerCase();
-      const recommended = recString === "true" || recString === "yes";
+      let recommended: boolean | null = null;
+
+      if (recommendedRaw !== null && recommendedRaw !== undefined && recommendedRaw !== "") {
+        const recString = String(recommendedRaw).toLowerCase().trim();
+
+        if (recString === "true" || recString === "yes") {
+          recommended = true;
+        } else if (recString === "false" || recString === "no") {
+          recommended = false;
+        }
+      }
 
       return {
         name: String(name || "Unknown Store"),
@@ -30,4 +39,6 @@ async function migrateLocations(): Promise<void> {
   }
 }
 
-migrateLocations().catch(console.error);
+if (require.main === module) {
+  migrateLocations().catch(console.error);
+}

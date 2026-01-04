@@ -28,7 +28,7 @@ function mapRowToPlayLog(row: any, listeners: string[]): PlayLog {
   return { artist, album, date, listeners };
 }
 
-async function migratePlayLogs(): Promise<void> {
+export async function migratePlayLogs(): Promise<void> {
   try {
     const userMap = await resolveUserMap();
     const names = Array.from(userMap.keys());
@@ -59,4 +59,6 @@ async function migratePlayLogs(): Promise<void> {
   }
 }
 
-migratePlayLogs().catch(console.error);
+if (require.main === module) {
+  migratePlayLogs().catch(console.error);
+}

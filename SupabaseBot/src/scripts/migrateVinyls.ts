@@ -4,7 +4,7 @@ import { getSheetRows } from "../utils/google/sheetUtils";
 import { resolveLocationMap } from "../utils/resolveLocationMap";
 import { resolveUserMap } from "../utils/resolveUserMap";
 
-const migrateVinyls = async (): Promise<void> => {
+export const migrateVinyls = async (): Promise<void> => {
   try {
     const [rows, userMap, locationMap] = await Promise.all([
       getSheetRows("Vinyls!A2:K"),
@@ -48,4 +48,6 @@ const migrateVinyls = async (): Promise<void> => {
   }
 };
 
-migrateVinyls().catch(console.error);
+if (require.main === module) {
+  migrateVinyls().catch(console.error);
+}

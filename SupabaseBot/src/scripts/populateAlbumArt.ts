@@ -1,7 +1,7 @@
 import { getAlbumArtFromSpotify } from "../services/spotify.api";
 import supabase from "../services/supabase";
 
-async function populateAlbumArt(): Promise<void>
+export async function populateAlbumArt(): Promise<void>
 {
   const { data: albums, error } = await supabase.from("wanted_items").select("id, artist, album, imageUrl");
 
@@ -28,4 +28,6 @@ async function populateAlbumArt(): Promise<void>
   }
 }
 
-populateAlbumArt().catch(console.error);
+if (require.main === module) {
+  populateAlbumArt().catch(console.error);
+}
