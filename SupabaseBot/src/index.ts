@@ -21,22 +21,22 @@ client.once("ready", () => {
 });
 
 client.on("messageCreate", async (message: Message) => {
-  if (message.author.bot) return; // Ignore bot messages
+  if (message.author.bot) return;
 
   const targetMessage = message.content;
-  if (targetMessage.toLocaleLowerCase().startsWith("!want2 "))
+  if (targetMessage.toLocaleLowerCase().startsWith("!want "))
   {
     ProcessWant(message);
     return;
   }
 
-  if (targetMessage.toLocaleLowerCase().startsWith("!2play "))
+  if (targetMessage.toLocaleLowerCase().startsWith("!play "))
   {
     ProcessPlay(message);
     return;
   }
 
-  if (targetMessage.startsWith("!2random")) {
+  if (targetMessage.startsWith("!random")) {
     const args = message.content.split(" ").slice(1);
     const param = args[0]?.toLowerCase();
     if (param === "store")
@@ -48,7 +48,7 @@ client.on("messageCreate", async (message: Message) => {
     return;
   }
 
-  if(targetMessage.startsWith("!2wantlist"))
+  if(targetMessage.startsWith("!wantlist"))
   {
     await ProcessList(message, 'want');
     return
