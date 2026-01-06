@@ -8,16 +8,13 @@ WORKDIR /usr/src/app
 COPY package*.json ./
 
 # Install dependencies
-# Using 'npm ci' is generally better for production/automated builds
 RUN npm install
 
 # Copy the rest of the application code
-# This includes src, service-account.json, and discordMapping.json
 COPY . .
 
-# Build the application (if your project requires a build step)
-RUN npm run build
+# Build the application with increased memory (2GB)
+RUN NODE_OPTIONS="--max-old-space-size=2048" npm run build
 
-# Use CMD to start the application when the container launches
-# This replaces the 'RUN npm start'
+# Use CMD to start the application
 CMD ["npm", "start"]
