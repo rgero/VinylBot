@@ -54,7 +54,7 @@ client.on("messageCreate", async (message: Message) => {
     return
   }
 
-  if(targetMessage.startsWith("!2have"))
+  if(targetMessage.startsWith("!have"))
   {
     await ProcessList(message, 'have');
     return
