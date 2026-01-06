@@ -1,16 +1,15 @@
+import { User } from "../interfaces/User.js";
 import { getUsers } from "../services/users.api.js";
 
 export const resolveUserMap = async (): Promise<Map<string, string[]>> => {
-  const userList = await getUsers();
-  
-  const userRecord = new Map<string, string[]>();
-  const allUserIds = userList.map(user => user.id);
+  const userList: User[] = await getUsers();
+  const userMap = new Map<string, string[]>();
+  const allIds = userList.map(u => u.id);
 
   userList.forEach(user => {
-    userRecord.set(user.name, [user.id]);
+    userMap.set(user.name.toLowerCase(), [user.id]);
   });
+  userMap.set("both", allIds);
 
-  userRecord.set("Both", allUserIds);
-
-  return userRecord;
+  return userMap;
 };

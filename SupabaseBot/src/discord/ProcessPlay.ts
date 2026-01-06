@@ -1,130 +1,89 @@
-import {ActionRowBuilder, ComponentType, Message, MessageActionRowComponentBuilder, StringSelectMenuBuilder} from "discord.js";
+import { ActionRowBuilder, ComponentType, Message, MessageActionRowComponentBuilder, StringSelectMenuBuilder } from "discord.js";
 
 import { PlayLog } from "../interfaces/PlayLog.js";
 import { SearchResponse } from "../interfaces/SearchResponse.js";
-import { User } from "../interfaces/User.js";
 import { getDropdownValue } from "../utils/discordToDropdown.js";
 import { getSpotifyData } from "../spotify/getSpotifyData.js";
-import { getUserByName } from "../services/users.api.js";
 import { getVinylsByQuery } from "../services/vinyls.api.js";
 import { parseSpotifyUrl } from "../spotify/parseSpotifyUrl.js";
 import { processNewPlay } from "../actions/processNewPlay.js";
+import { resolveUserMap } from "../utils/resolveUserMap.js";
 
 export const ProcessPlay = async (message: Message) => {
-  const params = message.content.split(" ").slice(1).join(" ").trim();
-  const requester = message.author?.username || "Unknown";
-  const username = getDropdownValue(requester);
+  const userMap = await resolveUserMap();
+  
+  // 1. Identify requester
+  const requesterName = getDropdownValue(message.author.username).toLowerCase();
+  const requesterIds = userMap.get(requesterName);
 
-  const user: User | null = await getUserByName(username);
-
-  if (!user) {
-    return message.reply("⚠️ User not found in system.");
+  if (!requesterIds) {
+    return message.reply("⚠️ You are not registered in the system.");
   }
 
-  // --- CASE 1: SPOTIFY URL ---
+  // 2. Identify mentioned listeners
+  const listenerSet = new Set<string>(requesterIds);
+  const mentions = message.mentions.users.filter(u => !u.bot);
+
+  for (const [_, mention] of mentions) {
+    const name = getDropdownValue(mention.username).toLowerCase();
+    const dbIds = userMap.get(name);
+    if (dbIds) {
+      dbIds.forEach(id => listenerSet.add(id));
+    }
+  }
+
+  const listenerIDs = Array.from(listenerSet);
+  const listenerCount = listenerIDs.length;
+
+  // 3. Clean search params
+  const params = message.content.split(" ").slice(1).join(" ").replace(/<@!?\d+>/g, "").trim();
+
+  if (!params) return message.reply("Please provide an album name or Spotify URL.");
+
+  // --- CASE 1: SPOTIFY ---
   const spotify = parseSpotifyUrl(params);
   if (spotify) {
     try {
       const { artists, albumName } = await getSpotifyData(spotify);
-
-      const newPlay: PlayLog = {
-        artist: artists,
-        album: albumName,
-        listeners: [user.id],
-        date: new Date(),
-      };
-
+      const newPlay: PlayLog = { artist: artists, album: albumName, listeners: listenerIDs, date: new Date() };
       await processNewPlay(newPlay);
-      return message.reply(`✅ Logged a play for **${artists} - ${albumName}**`);
-    } catch (error: any) {
-      console.error(error);
-      return message.reply(`❌ Failed to log Spotify play: ${error.message}`);
-    }
+      return message.reply(`✅ Logged for **${artists}** (${listenerCount} listeners)`);
+    } catch (e: any) { return message.reply(`❌ Spotify error: ${e.message}`); }
   }
 
   // --- CASE 2: MANUAL SEARCH ---
   let data = await getVinylsByQuery({ type: "search", term: params });
+  if (data.length === 0) return message.reply("No matching albums found!");
 
-  if (data.length === 0) {
-    return message.reply("No matching albums found!");
-  }
-
-  // Exactly one match found
   if (data.length === 1) {
-    const response: SearchResponse = data[0];
+    const res: SearchResponse = data[0];
     try {
-      const newPlay: PlayLog = {
-        artist: response.artist,
-        album: response.album,
-        listeners: [user.id],
-        date: new Date(),
-      };
-
+      const newPlay: PlayLog = { artist: res.artist, album: res.album, listeners: listenerIDs, date: new Date() };
       await processNewPlay(newPlay);
-      return message.reply(`✅ Logged a play for **${response.artist} - ${response.album}**`);
-    } catch (error: any) {
-      return message.reply(`❌ Failed to log play: ${error.message}`);
-    }
+      return message.reply(`✅ Logged **${res.artist}** for ${listenerCount} listeners`);
+    } catch (e: any) { return message.reply(`❌ Error: ${e.message}`); }
   }
 
-  // --- CASE 3: MULTIPLE MATCHES (DROPDOWN) ---
-  const albumLimit = 25;
-  const options = data.slice(0, albumLimit).map((row: SearchResponse, index) => ({
+  // --- CASE 3: DROPDOWN ---
+  const options = data.slice(0, 25).map((row, i) => ({
     label: `${row.artist.slice(0, 40)} - ${row.album.slice(0, 40)}`,
-    value: index.toString(),
+    value: i.toString(),
   }));
 
-  const selectMenu = new StringSelectMenuBuilder()
-    .setCustomId("select_album")
-    .setPlaceholder("Choose an album...")
-    .addOptions(options);
+  const row = new ActionRowBuilder<MessageActionRowComponentBuilder>().addComponents(
+    new StringSelectMenuBuilder().setCustomId("select_album").setPlaceholder("Choose an album...").addOptions(options)
+  );
 
-  const row = new ActionRowBuilder<MessageActionRowComponentBuilder>().addComponents(selectMenu);
+  const reply = await message.reply({ content: `Multiple matches found (${listenerCount} listeners):`, components: [row] });
 
-  const replyMessage = await message.reply({
-    content: "Please select the correct album from the dropdown:",
-    components: [row],
-  });
+  const collector = reply.createMessageComponentCollector({ componentType: ComponentType.StringSelect, max: 1, time: 60000 });
 
-  const collector = replyMessage.createMessageComponentCollector({
-    componentType: ComponentType.StringSelect,
-    max: 1,
-    time: 60000,
-  });
-
-  collector.on("collect", async (interaction) => {
-    if (interaction.user.id !== message.author.id) {
-      return interaction.reply({ content: "This isn't for you!", ephemeral: true });
-    }
-
-    const selectedIndex = parseInt(interaction.values[0]);
-    const { artist, album } = data[selectedIndex];
-
-    const newPlay: PlayLog = {
-      artist,
-      album,
-      listeners: [user.id],
-      date: new Date(),
-    };
-
+  collector.on("collect", async (int) => {
+    if (int.user.id !== message.author.id) return int.reply({ content: "Not for you!", ephemeral: true });
+    const { artist, album } = data[parseInt(int.values[0])];
     try {
-      await processNewPlay(newPlay);
-
-      await interaction.update({
-        content: `✅ Logged a play for **${artist} - ${album}**`,
-        components: [],
-      });
-    } catch (error: any) {
-      await interaction.update({
-        content: `❌ Error logging play: ${error.message}`,
-        components: [],
-      });
-    }
-  });
-
-  collector.on("end", (collected, reason) => {
-    if (reason === "time" && collected.size === 0) {
-      replyMessage.edit({ content: "Selection timed out.", components: [] }).catch(() => null);
-    }
+      await processNewPlay({ artist, album, listeners: listenerIDs, date: new Date() });
+      await int.update({ content: `✅ Logged **${artist}** for ${listenerCount} listeners`, components: [] });
+    } catch (e: any) { await int.update({ content: `❌ Error: ${e.message}`, components: [] }); }
   });
 };

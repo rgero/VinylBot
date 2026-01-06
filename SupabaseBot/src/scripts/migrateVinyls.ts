@@ -17,14 +17,9 @@ export const migrateVinyls = async (): Promise<void> => {
     const itemsToMigrate: Vinyl[] = rows.map((row) => {
       const [purchaseNum, artist, album, date, loc, price, owners, len, notes, plays, likes, color] = row;
 
-      let likedByArray: string[] = [];
-      const likesSplit = String(likes).split(",");
-      likesSplit.forEach( (value: string) => {
-        const userId = userMap.get(value.trim());
-        if (userId) {
-          likedByArray.push(userId[0]);
-        }
-      })
+      // Standardize lookup for owners and likes
+      const ownerIds = userMap.get(String(owners || "").toLowerCase()) ?? [];
+      const likedByArray = String(likes || "").split(",").map(name => name.trim().toLowerCase()).flatMap(name => userMap.get(name) ?? []);
       
       return {
         purchaseNumber: parseInt(purchaseNum) || 0,
@@ -33,22 +28,18 @@ export const migrateVinyls = async (): Promise<void> => {
         purchaseDate: date ? new Date(date) : new Date(),
         purchaseLocation: locationMap.get(loc) ?? "",
         price: parseFloat(price) || 0,
-        owners: userMap.get(owners) ?? [],
+        owners: ownerIds,
         length: parseInt(len) || 0,
         notes: notes ?? "",
         playCount: parseInt(plays) || 0,
-        likedBy: likedByArray ?? [],
+        likedBy: Array.from(new Set(likedByArray)),
         color: color?.trim() || ""
       };
     });
 
     await addVinyls(itemsToMigrate);
-    console.log(`Successfully prepared ${itemsToMigrate.length} vinyls.`);
+    console.log(`Successfully migrated ${itemsToMigrate.length} vinyls.`);
   } catch (error) {
     console.error("Vinyl migration failed:", error);
   }
 };
-
-if (require.main === module) {
-  migrateVinyls().catch(console.error);
-}

@@ -14,33 +14,38 @@ export async function migrateWantlist(): Promise<void> {
     const itemsToMigrate: WantedItem[] = rowData.map((row) => {
       const cells = row.values || [];
       
-      // Extract URL from =IMAGE("https://...")
+      // Extract URL from =IMAGE("https://...") formula
       const formula = cells[2]?.userEnteredValue?.formulaValue || "";
       const imageUrl = formula.match(/"([^"]+)"/)?.[1] || "";
 
-      // If the imageUrl extraction fails, go to Spotify
-      const artist: string = cells[0]?.formattedValue?.trim() ?? "";
-      const album: string = cells[1]?.formattedValue?.trim() ?? "";
+      const artist: string = cells[0]?.formattedValue?.trim() ?? "Unknown Artist";
+      const album: string = cells[1]?.formattedValue?.trim() ?? "Unknown Album";
       
-      // TODO: Fix this... probably?
+      // Use flatMap to resolve the searcher name to a flat array of IDs
+      // Standardizes the name to lowercase to match the new Map keys
+      const searcherName = (cells[3]?.formattedValue ?? "").trim().toLowerCase();
+      const searcherIds = userMap.get(searcherName) ?? [];
 
       return {
-        artist: cells[0]?.formattedValue?.trim() ?? "Unknown Artist",
-        album: cells[1]?.formattedValue?.trim() ?? "Unknown Album",
+        artist,
+        album,
         imageUrl, 
-        searcher: userMap.get(cells[3]?.formattedValue ?? "") ?? [],
+        searcher: searcherIds,
         notes: cells[4]?.formattedValue ?? "",
       };
     });
 
+    // Only migrate items that have at least one valid searcher ID
     const validItems = itemsToMigrate.filter(item => item.searcher.length > 0);
     
     if (validItems.length > 0) {
       await addWantedItems(validItems);
-      console.log(`Migrated ${validItems.length} wanted items.`);
+      console.log(`✅ Migrated ${validItems.length} wanted items.`);
+    } else {
+      console.log("⚠️ No valid items found to migrate.");
     }
   } catch (error) {
-    console.error("Wantlist migration failed:", error);
+    console.error("❌ Wantlist migration failed:", error);
   }
 }
 
