@@ -17,6 +17,7 @@ export const ProcessPlay = async (message: Message) => {
   const requesterIds = userMap.get(requesterName);
 
   if (!requesterIds) {
+    console.warn(`User ${message.author.username} not found in database. Requester ID: ${requesterIds}`);
     return message.reply("⚠️ You are not registered in the system.");
   }
 
