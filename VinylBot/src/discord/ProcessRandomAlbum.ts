@@ -1,9 +1,9 @@
 import {ActionRowBuilder, ButtonBuilder, ButtonStyle, ComponentType, Message, MessageActionRowComponentBuilder} from "discord.js";
-import { getVinyls, getVinylsLikedByUserID } from "../services/vinyls.api.js";
+import { getVinyls, getVinylsByQuery, getVinylsLikedByUserID } from "../services/vinyls.api.js";
 
 import { PlayLog } from "../interfaces/PlayLog.js";
+import { SearchResponse } from "../interfaces/SearchResponse.js";
 import { User } from "../interfaces/User.js";
-import { Vinyl } from "../interfaces/Vinyl.js";
 import { escapeColons } from "../utils/escapeColons.js";
 import { getDropdownValue } from "../utils/discordToDropdown.js";
 import { getUserByName } from "../services/users.api.js";
@@ -42,8 +42,7 @@ const buildRow = ({ showPlay, disabled = false }: { showPlay: boolean; disabled?
   return new ActionRowBuilder<MessageActionRowComponentBuilder>().addComponents(buttons);
 };
 
-
-const getRandomVinyl = (list: Vinyl[]): Vinyl => {
+const getRandomVinyl = (list: SearchResponse[]): SearchResponse => {
   return list[Math.floor(Math.random() * list.length)];
 };
 
@@ -52,32 +51,37 @@ export const ProcessRandomAlbum = async (message: Message) => {
     const args = message.content.split(/\s+/).slice(1);
     const param = args[0]?.toLowerCase().trim();
 
-    let user: User | null = await getUserByName(getDropdownValue(message.author?.username || "Unknown"))
-    if (!user) {
-      await message.reply("❌ No matching user found.");
-      return;
-    }
-
-    let vinyls: Vinyl[] = [];
+    let targetUser: User | null = null;
+    let vinyls: SearchResponse[] = [];
 
     if (param) {
-      user = await getUserByName(param);
-      if (!user) {
-        await message.reply("❌ No matching user found.");
-        return;
+      targetUser = await getUserByName(param);
+      
+      if (targetUser) {
+        // User found: get their liked vinyls
+        vinyls = (await getVinylsLikedByUserID(targetUser.id)) as SearchResponse[];
+      } else {
+        // Not a username: treat as a general search query
+        const searchTerm = args.join(" ");
+        vinyls = await getVinylsByQuery({ type: "search", term: searchTerm });
+        // Default the "logging" user to the person who sent the message
+        targetUser = await getUserByName(getDropdownValue(message.author.username));
       }
-      vinyls = await getVinylsLikedByUserID(user.id);
     } else {
-      vinyls = await getVinyls();
+      // No params: get everything and default to author
+      targetUser = await getUserByName(getDropdownValue(message.author.username));
+      vinyls = (await getVinyls()) as SearchResponse[];
+    }
+
+    if (!targetUser) {
+      return message.reply("❌ No matching user profile found for logging.");
     }
 
     if (!vinyls || vinyls.length === 0) {
-      await message.reply("❌ No matching entries found.");
-      return;
+      return message.reply("❌ No matching entries found.");
     }
 
     let currentVinyl = getRandomVinyl(vinyls);
-
     const sentMessage = await message.reply({
       embeds: [buildEmbed(currentVinyl.artist, currentVinyl.album)],
       components: [buildRow({ showPlay: true })],
@@ -89,45 +93,48 @@ export const ProcessRandomAlbum = async (message: Message) => {
     });
 
     collector.on("collect", async (interaction) => {
+      // Basic security check
       if (interaction.user.id !== message.author.id) {
-        await interaction.reply({
+        return interaction.reply({
           content: "You can't use these buttons.",
           ephemeral: true,
         });
-        return;
       }
 
       if (interaction.customId === "play") {
         collector.stop("played");
 
-        // Remove buttons and update embed
         await interaction.update({
-          embeds: [buildEmbed(currentVinyl.artist, currentVinyl.album)],
           components: [],
         });
 
-        const newPlay: PlayLog =
-        {
+        const newPlay: PlayLog = {
           artist: currentVinyl.artist,
           album: currentVinyl.album,
-          listeners: [user.id],
-          date: new Date()
-        }
-        await processNewPlay(newPlay);
+          listeners: [targetUser!.id],
+          date: new Date(),
+        };
 
-        await interaction.followUp({
-          content: `▶️ **Play logged:** ${currentVinyl.artist} — *${currentVinyl.album}*`,
-        });
+        try {
+          await processNewPlay(newPlay);
+          await interaction.followUp({
+            content: `▶️ **Play logged for ${targetUser!.name}:** ${currentVinyl.artist} — *${currentVinyl.album}*`,
+          });
+        } catch (playErr) {
+          console.error("Failed to log play:", playErr);
+          await interaction.followUp({ content: "⚠️ Album was selected, but I couldn't log the play." });
+        }
       }
 
       if (interaction.customId === "reroll") {
-        let nextVinyl = getRandomVinyl(vinyls);
+        // Prevent infinite loop if only one vinyl exists
         if (vinyls.length > 1) {
-          while (nextVinyl.album === currentVinyl.album) {
+          let nextVinyl;
+          do {
             nextVinyl = getRandomVinyl(vinyls);
-          }
+          } while (nextVinyl.album === currentVinyl.album);
+          currentVinyl = nextVinyl;
         }
-        currentVinyl = nextVinyl;
 
         await interaction.update({
           embeds: [buildEmbed(currentVinyl.artist, currentVinyl.album)],
@@ -137,14 +144,14 @@ export const ProcessRandomAlbum = async (message: Message) => {
     });
 
     collector.on("end", (_collected, reason) => {
+      // If the user clicked "Play", buttons are already handled
       if (reason === "played") return;
-      sentMessage
-        .edit({
+
+      sentMessage.edit({
           components: [buildRow({ showPlay: true, disabled: true })],
-        })
-        .catch(() => {
-          // Ignore this. Message likely deleted.
-         });
+        }).catch(() => {
+          /* Message likely deleted, ignore */
+        });
     });
   } catch (err) {
     console.error("Error in ProcessRandomAlbum:", err);
