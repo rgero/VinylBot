@@ -9,12 +9,6 @@ export const getPlayLogs = async (): Promise<PlayLog[]> => {
 }
 
 export const addPlayLog = async (newPlayLog: PlayLog) => {
-  if (newPlayLog.date)
-  {
-    const newDate = new Date(newPlayLog.date).toDateString();
-    newPlayLog.date = new Date(`${newDate}T12:00:00Z`);
-  }
-
   const { error } = await supabase.from('playlogs').insert([newPlayLog]);
   if (error) console.error(error);
 }
