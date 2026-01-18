@@ -4,7 +4,7 @@ import supabase from "../services/supabase.js";
 
 export async function populateAlbumArt(): Promise<void>
 {
-  const { data: albums, error } = await supabase.from("wanted_items").select("id, artist, album, imageUrl");
+  const { data: albums, error } = await supabase.from("vinyls").select("id, artist, album, imageUrl");
 
   if (error) {
     throw new Error(`Supabase fetch error: ${error.message}`);
@@ -20,7 +20,7 @@ export async function populateAlbumArt(): Promise<void>
     try {
       const albumArtUrl = await getAlbumArtFromSpotify(album.artist, album.album);
       if (albumArtUrl) {
-        await supabase.from("wanted_items").update({ imageUrl: albumArtUrl }).eq("id", album.id);
+        await supabase.from("vinyls").update({ imageUrl: albumArtUrl }).eq("id", album.id);
       }
     } catch (error) {
       console.error(`Error fetching album art for ${album.artist} - ${album.album}:`, error);
