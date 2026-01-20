@@ -1,6 +1,6 @@
 export interface SearchResponse
 {
-  id?: string,
+  id: number,
   artist: string,
   album: string;
   owners?: string[];
