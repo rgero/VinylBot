@@ -51,6 +51,17 @@ export const getVinylID = async (artist: string, album: string): Promise<number 
   return data ? data.id : null;
 };
 
+export const getVinylByID = async (id: number): Promise<Vinyl|null> => {
+  const { data, error } = await supabase
+    .from("vinyls")
+    .select("*")
+    .eq("id",id)
+    .maybeSingle();
+
+  if (error) throw error;
+  return data ? data : null;
+}
+
 export const getVinylByDetails = async (artist: string, album: string): Promise<Vinyl | null> => {
   const { data, error } = await supabase
     .from("vinyls")

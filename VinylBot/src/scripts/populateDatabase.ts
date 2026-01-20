@@ -1,9 +1,9 @@
 import { migrateLocations } from "./migrateLocations.js";
-import { migratePlayLogs } from "./migratePlayLogs.js";
 import { migrateVinyls } from "./migrateVinyls.js";
 import { migrateWantlist } from "./migrateWantlist.js";
 import { populateAlbumArt } from "./populateAlbumArt.js";
 
+// import { migratePlayLogs } from "./migratePlayLogs.js";
 async function populateDatabase() {
   console.log("--- Starting Full Database Population ---");
 
@@ -17,8 +17,8 @@ async function populateDatabase() {
     console.log("\n3. Migrating Vinyls...");
     await migrateVinyls();
 
-    console.log("\n4. Migrating Play Logs...");
-    await migratePlayLogs();
+    // console.log("\n4. Migrating Play Logs...");
+    // await migratePlayLogs();
 
     console.log("\n5. Populating Missing Album Art...");
     await populateAlbumArt();

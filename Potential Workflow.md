@@ -10,3 +10,6 @@ Stories
 1.  Bot responding to discord
 2. Connection to Spotify where you give it a link and it parses data 
 3. Data gets inserted into Google sheet
+
+
+docker compose pull && docker compose up -d

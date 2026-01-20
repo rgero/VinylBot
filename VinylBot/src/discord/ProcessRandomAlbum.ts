@@ -108,9 +108,13 @@ export const ProcessRandomAlbum = async (message: Message) => {
           components: [],
         });
 
+        if (!currentVinyl || !currentVinyl.id) {
+          await interaction.followUp({ content: "⚠️ Album was selected, but I couldn't log the play." });
+          return;
+        }
+
         const newPlay: PlayLog = {
-          artist: currentVinyl.artist,
-          album: currentVinyl.album,
+          album_id: currentVinyl.id,
           listeners: [targetUser!.id],
           date: new Date(),
         };

@@ -79,6 +79,7 @@ export const ProcessPlay = async (message: Message) => {
   if (data.length === 1) {
     const res: SearchResponse = data[0];
     try {
+      if (!res.id) {throw new Error("Search Response does not have ID")}
       const newPlay: PlayLog = { 
         album_id: res.id,
         listeners: listenerIDs, 
@@ -121,6 +122,7 @@ export const ProcessPlay = async (message: Message) => {
     const { artist, album, id: album_id } = selected;
 
     try {
+      if (!album_id) {throw new Error("Search Response does not have ID")}
       await processNewPlay({ 
         album_id, 
         listeners: listenerIDs, 
