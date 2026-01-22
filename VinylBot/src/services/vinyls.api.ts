@@ -87,15 +87,19 @@ export const searchVinyls = async (term: string): Promise<SearchResponse[]> => {
 /**
  * MUTATIONS
  */
-export const addVinyl = async (newVinyl: Omit<Vinyl, 'id'>): Promise<Vinyl> => {
-  const { data, error } = await supabase
-    .from('vinyls')
-    .insert([newVinyl])
-    .select()
-    .single();
-
-  if (error) throw error;
-  return data;
+export type AddStatus = "ADDED" | "DUPLICATE" | "ERROR";
+export const addVinyl = async (newVinyl: Omit<Vinyl, 'id'>): Promise<AddStatus> => {
+  const { data, error } = await supabase.rpc('insert_vinyl_with_number', { payload: newVinyl});
+  if (error) {
+    if (error.code === '23505') {
+      return "DUPLICATE";
+    }
+    
+    console.error("Supabase Error:", error.message);
+    return "ERROR";
+  }
+  
+  return "ADDED";
 };
 
 export const addVinyls = async (newVinyls: Omit<Vinyl, 'id'>[]): Promise<Vinyl[]> => {

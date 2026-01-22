@@ -2,6 +2,7 @@ import "dotenv/config";
 
 import { Client, GatewayIntentBits, Message } from "discord.js";
 
+import { ProcessAdd } from "./discord/ProcessAdd.js";
 import { ProcessList } from "./discord/ProcessList.js";
 import { ProcessPlay } from "./discord/ProcessPlay.js";
 import { ProcessRandomAlbum } from "./discord/ProcessRandomAlbum.js";
@@ -58,6 +59,12 @@ client.on("messageCreate", async (message: Message) => {
   {
     await ProcessList(message, 'have');
     return
+  }
+
+  if(targetMessage.startsWith("!add"))
+  {
+    await ProcessAdd(message)
+    return;
   }
 });
 
