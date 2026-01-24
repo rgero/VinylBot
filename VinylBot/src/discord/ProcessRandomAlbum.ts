@@ -4,10 +4,10 @@ import { getVinyls, getVinylsByQuery, getVinylsLikedByUserID } from "../services
 import { PlayLog } from "../interfaces/PlayLog.js";
 import { SearchResponse } from "../interfaces/SearchResponse.js";
 import { User } from "../interfaces/User.js";
+import { addPlayLog } from "../services/plays.api.js";
 import { escapeColons } from "../utils/escapeColons.js";
 import { getDropdownValue } from "../utils/discordToDropdown.js";
 import { getUserByName } from "../services/users.api.js";
-import { processNewPlay } from "../actions/processNewPlay.js";
 
 const buildEmbed = (artist: string, album: string) => {
   const description = `🎵 **${artist}**\n💿 *${album}*`;
@@ -120,7 +120,7 @@ export const ProcessRandomAlbum = async (message: Message) => {
         };
 
         try {
-          await processNewPlay(newPlay);
+          await addPlayLog(newPlay);
           await interaction.followUp({
             content: `▶️ **Play logged for ${targetUser!.name}:** ${currentVinyl.artist} — *${currentVinyl.album}*`,
           });

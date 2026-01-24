@@ -3,10 +3,10 @@ import { getVinylID, getVinylsByQuery } from "../services/vinyls.api.js";
 
 import { PlayLog } from "../interfaces/PlayLog.js";
 import { SearchResponse } from "../interfaces/SearchResponse.js";
+import { addPlayLog } from "../services/plays.api.js";
 import { getDropdownValue } from "../utils/discordToDropdown.js";
 import { getSpotifyData } from "../spotify/getSpotifyData.js";
 import { parseSpotifyUrl } from "../spotify/parseSpotifyUrl.js";
-import { processNewPlay } from "../actions/processNewPlay.js";
 import { resolveUserMap } from "../utils/resolveUserMap.js";
 
 async function resolveVinylId(artist: string, album: string): Promise<number> {
@@ -65,7 +65,7 @@ export const ProcessPlay = async (message: Message) => {
         album: albumName 
       };
 
-      await processNewPlay(newPlay);
+      await addPlayLog(newPlay);
       return message.reply(`✅ Logged for **${artists}** - **${albumName}** for ${listenerCount} listener${listenerCount === 1 ? "" : "s"}`);
     } catch (e: any) { 
         return message.reply(`❌ ${e.message}`); 
@@ -87,7 +87,7 @@ export const ProcessPlay = async (message: Message) => {
         artist: res.artist,
         album: res.album
       };
-      await processNewPlay(newPlay);
+      await addPlayLog(newPlay);
       return message.reply(`✅ Logged **${res.artist}** - **${res.album}** for ${listenerCount} listener${listenerCount === 1 ? "" : "s"}`);
     } catch (e: any) { 
         return message.reply(`❌ Error: ${e.message}`); 
@@ -123,7 +123,7 @@ export const ProcessPlay = async (message: Message) => {
 
     try {
       if (!album_id) {throw new Error("Search Response does not have ID")}
-      await processNewPlay({ 
+      await addPlayLog({ 
         album_id, 
         listeners: listenerIDs, 
         date: new Date(),
