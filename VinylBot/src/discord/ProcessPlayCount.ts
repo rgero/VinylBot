@@ -1,7 +1,7 @@
-import { EmbeddedResponse } from "../utils/discord/EmbeddedResponse";
+import { EmbeddedResponse } from "../utils/discord/EmbeddedResponse.js";
 import { Message } from "discord.js";
-import { escapeColons } from "../utils/escapeColons";
-import { getVinylsByPlayCount } from "../services/vinyls.api";
+import { escapeColons } from "../utils/escapeColons.js";
+import { getVinylsByPlayCount } from "../services/vinyls.api.js";
 
 export const ProcessPlayCount = async (message: Message) => {
   try {

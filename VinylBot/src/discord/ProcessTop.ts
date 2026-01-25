@@ -1,8 +1,8 @@
-import { AlbumCount } from "../interfaces/AlbumCount";
-import { EmbeddedResponse } from "../utils/discord/EmbeddedResponse";
+import { AlbumCount } from "../interfaces/AlbumCount.js";
+import { EmbeddedResponse } from "../utils/discord/EmbeddedResponse.js";
 import { Message } from "discord.js";
-import { escapeColons } from "../utils/escapeColons";
-import { getArtistVinylCounts } from "../services/vinyls.api";
+import { escapeColons } from "../utils/escapeColons.js";
+import { getArtistVinylCounts } from "../services/vinyls.api.js";
 
 export const ProcessTop = async (message: Message) => {
   try {
