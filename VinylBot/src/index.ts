@@ -5,8 +5,11 @@ import { Client, GatewayIntentBits, Message } from "discord.js";
 import { ProcessAdd } from "./discord/ProcessAdd.js";
 import { ProcessList } from "./discord/ProcessList.js";
 import { ProcessPlay } from "./discord/ProcessPlay.js";
+import { ProcessPlayCount } from "./discord/ProcessPlayCount.js";
 import { ProcessRandomAlbum } from "./discord/ProcessRandomAlbum.js";
 import { ProcessRandomStore } from "./discord/ProcessRandomStore.js";
+import { ProcessTop } from "./discord/ProcessTop.js";
+import { ProcessTopLocation } from "./discord/ProcessTopLocation.js";
 import { ProcessWant } from "./discord/ProcessWant.js";
 
 const client: Client = new Client({
@@ -27,14 +30,12 @@ client.on("messageCreate", async (message: Message) => {
   const targetMessage = message.content;
   if (targetMessage.toLocaleLowerCase().startsWith("!want "))
   {
-    ProcessWant(message);
-    return;
+    return await ProcessWant(message);
   }
 
   if (targetMessage.toLocaleLowerCase().startsWith("!play "))
   {
-    ProcessPlay(message);
-    return;
+    return await ProcessPlay(message);
   }
 
   if (targetMessage.startsWith("!random")) {
@@ -51,20 +52,31 @@ client.on("messageCreate", async (message: Message) => {
 
   if(targetMessage.startsWith("!wantlist"))
   {
-    await ProcessList(message, 'want');
-    return
+    return await ProcessList(message, 'want');
   }
 
   if(targetMessage.startsWith("!have"))
   {
-    await ProcessList(message, 'have');
-    return
+    return await ProcessList(message, 'have');
   }
 
   if(targetMessage.startsWith("!add"))
   {
-    await ProcessAdd(message)
-    return;
+    return await ProcessAdd(message)
+  }
+  
+  if(targetMessage.startsWith("!top"))
+  {
+    const args = message.content.split(" ").slice(1);
+    const param: string = args[0]?.toLowerCase();
+    if ( param === "plays")
+    {
+      return await ProcessPlayCount(message);
+    } else if (param === "location") {
+      return await ProcessTopLocation(message);
+    } else {
+      return await ProcessTop(message);
+    }
   }
 });
 

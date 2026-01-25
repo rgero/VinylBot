@@ -13,3 +13,18 @@ export const getUserByName = async (name: string): Promise<User|null> => {
   if (error) console.log(error);
   return data ?? null;
 }
+
+export const getNameById = async (id: string): Promise<string | null> => {
+  const { data, error } = await supabase
+    .from('users')
+    .select('name')
+    .eq('id', id) // Use .eq for ID lookups
+    .maybeSingle(); // Safely handles 0 or 1 results without throwing a 406 error
+
+  if (error) {
+    console.error("Error fetching username:", error.message);
+    return null;
+  }
+
+  return data?.name ?? null;
+};

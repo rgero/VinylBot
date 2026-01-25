@@ -2,10 +2,11 @@ import * as commandParser from '../../src/utils/parseCommand';
 import * as vinylApi from '../../src/services/vinyls.api';
 import * as wantlistApi from '../../src/services/wantlist.api';
 
+import { ComponentType, Message } from 'discord.js';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { Message } from 'discord.js';
 import { ProcessList } from '../../src/discord/ProcessList';
+import { SearchResponse } from '../../src/interfaces/SearchResponse'; // Adjust path if needed
 
 // Setup Mocks
 vi.mock('../../src/services/vinyls.api');
@@ -23,9 +24,17 @@ describe('ProcessList Integration Tests', () => {
         on: vi.fn(),
         stop: vi.fn() 
       }),
-      edit: vi.fn(),
+      edit: vi.fn().mockResolvedValue({}),
     }),
   } as unknown as Message);
+
+  // Helper to generate mock data matching SearchResponse
+  const mockSearchItem = (artist: string, album: string): SearchResponse => ({
+    artist,
+    album,
+    owners: [],
+    searcher: []
+  });
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -42,7 +51,7 @@ describe('ProcessList Integration Tests', () => {
       });
 
       const vinylSpy = vi.mocked(vinylApi.getVinylsByQuery).mockResolvedValue([
-        ['The Beatles', 'Abbey Road']
+        mockSearchItem('The Beatles', 'Abbey Road')
       ]);
 
       await ProcessList(mockMessage, 'have');
@@ -63,7 +72,9 @@ describe('ProcessList Integration Tests', () => {
         term: 'uuid-1234'
       });
 
-      const vinylSpy = vi.mocked(vinylApi.getVinylsByQuery).mockResolvedValue([['Artist', 'Title']]);
+      const vinylSpy = vi.mocked(vinylApi.getVinylsByQuery).mockResolvedValue([
+        mockSearchItem('Artist', 'Title')
+      ]);
 
       await ProcessList(mockMessage, 'have');
 
@@ -82,7 +93,7 @@ describe('ProcessList Integration Tests', () => {
       });
 
       const wantSpy = vi.mocked(wantlistApi.getWantList).mockResolvedValue([
-        ['Rise Against', 'Kid A']
+        mockSearchItem('Rise Against', 'The Unraveling')
       ]);
 
       await ProcessList(mockMessage, 'want');
@@ -103,7 +114,9 @@ describe('ProcessList Integration Tests', () => {
         term: ''
       });
 
-      vi.mocked(wantlistApi.getWantList).mockResolvedValue([{artist: 'Linkin Park', album:'Hybrid Theory'}]);
+      vi.mocked(wantlistApi.getWantList).mockResolvedValue([
+        mockSearchItem('Linkin Park', 'Hybrid Theory')
+      ]);
 
       await ProcessList(mockMessage, 'want');
 
@@ -117,12 +130,27 @@ describe('ProcessList Integration Tests', () => {
     it('should reply with a specific message when the database returns no results', async () => {
       const mockMessage = createMockMessage('!have NonExistentArtist');
 
-      vi.mocked(commandParser.parseCommand).mockResolvedValue({ type: 'search', term: 'NonExistentArtist' });
+      vi.mocked(commandParser.parseCommand).mockResolvedValue({ 
+        type: 'search', 
+        term: 'NonExistentArtist' 
+      });
       vi.mocked(vinylApi.getVinylsByQuery).mockResolvedValue([]);
 
       await ProcessList(mockMessage, 'have');
 
-      expect(mockMessage.reply).toHaveBeenCalledWith(expect.stringContaining('❌ Nothing found'));
+      expect(mockMessage.reply).toHaveBeenCalledWith(expect.stringContaining('❌ No items found'));
+    });
+
+    it('should handle API errors gracefully', async () => {
+      const mockMessage = createMockMessage('!have error');
+      vi.spyOn(console, 'error').mockImplementation(() => {}); // Silence console
+
+      vi.mocked(commandParser.parseCommand).mockResolvedValue({ type: 'full', term: '' });
+      vi.mocked(vinylApi.getVinylsByQuery).mockRejectedValue(new Error('DB Error'));
+
+      await ProcessList(mockMessage, 'have');
+
+      expect(mockMessage.reply).toHaveBeenCalledWith(expect.stringContaining('⚠️ An error occurred'));
     });
   });
 });

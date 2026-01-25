@@ -57,3 +57,9 @@ export const findLocation = async (location : Partial<Location>) => {
   if (error) console.error(error);
   else console.log(data);
 }
+
+export const getLocationsByPurchaseCount = async (): Promise<Location[]> => {
+  const { data, error } = await supabase.from('locations').select('*').order('purchaseCount', { ascending: false })
+  if (error) throw error;
+  return data ?? [];
+};
