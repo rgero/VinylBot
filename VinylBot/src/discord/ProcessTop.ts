@@ -12,7 +12,7 @@ export const ProcessTop = async (message: Message) => {
       title: "Top Artists by Album Count",
       list,
       formatItem: (item, idx) => 
-        `${idx + 1}. **${escapeColons(item.artist)}** - **${escapeColons(item.artist)}** - ${item.count}`
+        `${idx + 1}. **${escapeColons(item.artist)}** - ${item.count}`
     });
   } catch (error) {
     console.error("Error in ProcessTop:", error);

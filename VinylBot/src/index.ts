@@ -65,17 +65,19 @@ client.on("messageCreate", async (message: Message) => {
     return await ProcessAdd(message)
   }
   
-  if(targetMessage.startsWith("!top"))
-  {
+  if (targetMessage.startsWith("!top")) {
     const args = message.content.split(" ").slice(1);
-    const param: string = args[0]?.toLowerCase();
-    if ( param === "plays")
-    {
-      return await ProcessPlayCount(message);
-    } else if (param === "location") {
-      return await ProcessTopLocation(message);
-    } else {
-      return await ProcessTop(message);
+    const param = args[0]?.toLowerCase();
+
+    switch (param) {
+      case "plays":
+        return await ProcessPlayCount(message);
+      case "locations":
+        return await ProcessTopLocation(message);
+      case undefined:
+        return await ProcessTop(message);
+      default:
+        return message.reply("Invalid Query. Valid inputs are `plays` or `locations`.");
     }
   }
 });
