@@ -3,6 +3,7 @@ import "dotenv/config";
 import { Client, GatewayIntentBits, Message } from "discord.js";
 
 import { ProcessAdd } from "./discord/ProcessAdd.js";
+import { ProcessInfo } from "./discord/ProcessInfo.js";
 import { ProcessList } from "./discord/ProcessList.js";
 import { ProcessPlay } from "./discord/ProcessPlay.js";
 import { ProcessPlayCount } from "./discord/ProcessPlayCount.js";
@@ -27,13 +28,13 @@ client.once("ready", () => {
 client.on("messageCreate", async (message: Message) => {
   if (message.author.bot) return;
 
-  const targetMessage = message.content;
-  if (targetMessage.toLocaleLowerCase().startsWith("!want "))
+  const targetMessage = message.content.toLocaleLowerCase();
+  if (targetMessage.startsWith("!want "))
   {
     return await ProcessWant(message);
   }
 
-  if (targetMessage.toLocaleLowerCase().startsWith("!play "))
+  if (targetMessage.startsWith("!play "))
   {
     return await ProcessPlay(message);
   }
@@ -79,6 +80,11 @@ client.on("messageCreate", async (message: Message) => {
       default:
         return message.reply("Invalid Query. Valid inputs are `plays` or `locations`.");
     }
+  }
+
+  if (targetMessage.startsWith("!info"))
+  {
+    return await ProcessInfo(message);
   }
 });
 

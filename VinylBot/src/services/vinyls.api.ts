@@ -40,6 +40,12 @@ export const getVinylsByQuery = async (query: { type: string; term: string }): P
   return data ?? [];
 };
 
+export const getFullVinylsByQuery = async (term: string): Promise<Vinyl[]> => {
+  const { data, error } = await supabase.from('vinyls').select(`*, purchaseLocation:locations (name)`).ilike('album', `%${term}%`);
+  if (error) throw error;
+  return data ?? [];
+}
+
 export const getVinylID = async (artist: string, album: string): Promise<number | null> => {
   const { data, error } = await supabase
     .from("vinyls")

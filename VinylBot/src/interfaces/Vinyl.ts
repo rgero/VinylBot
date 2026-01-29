@@ -1,3 +1,4 @@
+import { Location } from "./Location";
 
 export interface Vinyl {
   id?: number;
@@ -7,7 +8,7 @@ export interface Vinyl {
   color?: string;
   purchaseDate: string;
   purchasedBy?: string[];
-  purchaseLocation?: string;
+  purchaseLocation?: Location;
   price?: number;
   owners: string[];
   length?: number;
