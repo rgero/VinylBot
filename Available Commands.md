@@ -21,3 +21,9 @@ Used to record when we play the vinyl
 
 ### Have List
 It's the same as Want List just with `!have`
+
+### Info
+- `!info {album name}` - Gives you some info about the album
+
+### Add
+- `!add {spotify link}` - Adds the album to the database. It won't be complete so you'll have to finish it on the website.
