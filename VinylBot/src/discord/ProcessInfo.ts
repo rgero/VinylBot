@@ -1,19 +1,8 @@
-import {
-  ActionRowBuilder,
-  ComponentType,
-  EmbedBuilder,
-  Message,
-  MessageActionRowComponentBuilder,
-  StringSelectMenuBuilder
-} from "discord.js";
+import {ActionRowBuilder, ComponentType, EmbedBuilder, Message, StringSelectMenuBuilder} from "discord.js";
 
-import type { Vinyl } from "../interfaces/Vinyl";
-import { getFullVinylsByQuery } from "../services/vinyls.api";
+import type { Vinyl } from "../interfaces/Vinyl.js";
+import { getFullVinylsByQuery } from "../services/vinyls.api.js";
 
-/**
- * Helper to ensure strings stay within Discord's API limits
- * to prevent 400 Bad Request errors.
- */
 const limit = (str: string | undefined | null, max: number) => {
   if (!str) return "—";
   return str.length > max ? `${str.slice(0, max - 3)}...` : str;
@@ -95,7 +84,7 @@ const ProcessMultiple = async (message: Message, data: Vinyl[]) => {
       await int.update({
         content: "✅ Record found:",
         embeds: [embed],
-        components: [], // Remove the dropdown after selection
+        components: [],
       });
     } catch (e: any) {
       await int.update({
