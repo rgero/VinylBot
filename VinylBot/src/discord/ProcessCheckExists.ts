@@ -1,10 +1,10 @@
 import { EmbedBuilder, Message } from "discord.js";
 
-import { CheckAlbumExistence } from "../discogs/CheckAlbumExistence";
-import { SpotifyUrl } from "../interfaces/spotify/SpotifyUrl";
-import { escapeColons } from "../utils/escapeColons";
-import { getSpotifyData } from "../spotify/getSpotifyData";
-import { parseSpotifyUrl } from "../spotify/parseSpotifyUrl";
+import { CheckAlbumExistence } from "../discogs/CheckAlbumExistence.js";
+import { SpotifyUrl } from "../interfaces/spotify/SpotifyUrl.js";
+import { escapeColons } from "../utils/escapeColons.js";
+import { getSpotifyData } from "../spotify/getSpotifyData.js";
+import { parseSpotifyUrl } from "../spotify/parseSpotifyUrl.js";
 
 export const ProcessCheckExists = async (message: Message) => {
   const args = message.content.split(" ").slice(1);
