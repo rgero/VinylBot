@@ -8,30 +8,41 @@ import { parseSpotifyUrl } from "../spotify/parseSpotifyUrl.js";
 
 export const ProcessCheckExists = async (message: Message) => {
   const args = message.content.split(" ").slice(1);
-
-  if (args.length != 1) {
-    return message.reply("Invalid query. Usage: `!exists {spotify link}`");
-  }
-
-  const parsed: SpotifyUrl | null = parseSpotifyUrl(args[0]);
-  if (!parsed) return;
-
   try {
-    await message.suppressEmbeds(true);
-    const spotifyData = await getSpotifyData(parsed);
-    
-    const { artists, albumName, albumArt, releaseDate } = spotifyData;
+    let exists: boolean = false;
+    let albumName: string = "";
+    let artists: string = "";
+    let albumArt: string = "";
 
-    const exists = await CheckAlbumExistence(artists, albumName)
+    // Case 1: Spotify URL provided
+    const spotifyURL: SpotifyUrl | null = parseSpotifyUrl(args[0]);
+    if (spotifyURL)
+    {
+      await message.suppressEmbeds(true);
+      const spotifyData = await getSpotifyData(spotifyURL);
+      
+      ({ artists, albumName, albumArt } = spotifyData);
+      exists = await CheckAlbumExistence(artists, albumName)
+    } else {
+      // Case 2: Artist | Album provided.
+      const queryString = args.join(" ");
+      const match = queryString.match(/^(.+?)\s*\|\s*(.+)$/);
+
+      if (!match) {
+        return message.reply(
+          "Please provide both artist and album name separated by ' | ', or include a Spotify link."
+        );
+      }
+
+      [, artists, albumName] = match;
+      exists = await CheckAlbumExistence(artists, albumName);
+    }
 
     const embed = new EmbedBuilder()
-      .setTitle(`Does: ${escapeColons(albumName)} exist?`)
-      .setDescription(escapeColons(artists))
+      .setTitle(`Does: ${escapeColons(artists)} - ${escapeColons(albumName)} exist?`)
       .setColor(0xf1c40f)
-      .setThumbnail(albumArt)
-      .setURL(`https://open.spotify.com/${parsed.type}/${parsed.id}`)
+      .setThumbnail(albumArt || "https://records.roymond.net/placeholder-album.png")
       .addFields(
-        { name: "Release Date", value: releaseDate || "N/A", inline: true },
         { name: "Exists?", value: exists ? "✅ Yes" : "❌ No", inline: true }
       );
 
