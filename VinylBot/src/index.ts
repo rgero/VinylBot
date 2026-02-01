@@ -3,6 +3,7 @@ import "dotenv/config";
 import { Client, GatewayIntentBits, Message } from "discord.js";
 
 import { ProcessAdd } from "./discord/ProcessAdd.js";
+import { ProcessCheckExists } from "./discord/ProcessCheckExists.js";
 import { ProcessInfo } from "./discord/ProcessInfo.js";
 import { ProcessList } from "./discord/ProcessList.js";
 import { ProcessPlay } from "./discord/ProcessPlay.js";
@@ -85,6 +86,11 @@ client.on("messageCreate", async (message: Message) => {
   if (targetMessage.startsWith("!info"))
   {
     return await ProcessInfo(message);
+  }
+
+  if(targetMessage.startsWith("!exists"))
+  {
+    return await ProcessCheckExists(message);
   }
 });
 
