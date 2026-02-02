@@ -7,11 +7,11 @@ import { ProcessCheckExists } from "./discord/ProcessCheckExists.js";
 import { ProcessInfo } from "./discord/ProcessInfo.js";
 import { ProcessList } from "./discord/ProcessList.js";
 import { ProcessPlay } from "./discord/ProcessPlay.js";
-import { ProcessPlayCount } from "./discord/ProcessPlayCount.js";
+import { ProcessPlayCount } from "./discord/stats/ProcessPlayCount.js";
 import { ProcessRandomAlbum } from "./discord/ProcessRandomAlbum.js";
 import { ProcessRandomStore } from "./discord/ProcessRandomStore.js";
-import { ProcessTop } from "./discord/ProcessTop.js";
-import { ProcessTopLocation } from "./discord/ProcessTopLocation.js";
+import { ProcessTop } from "./discord/stats/ProcessTop.js";
+import { ProcessTopLocation } from "./discord/stats/ProcessTopLocation.js";
 import { ProcessWant } from "./discord/ProcessWant.js";
 
 const client: Client = new Client({

@@ -1,7 +1,7 @@
-import { EmbeddedResponse } from "../utils/discord/EmbeddedResponse.js";
+import { EmbeddedResponse } from "../../utils/discord/EmbeddedResponse.js";
 import { Message } from "discord.js";
-import { escapeColons } from "../utils/escapeColons.js";
-import { getLocationsByPurchaseCount } from "../services/locations.api.js";
+import { escapeColons } from "../../utils/escapeColons.js";
+import { getLocationsByPurchaseCount } from "../../services/locations.api.js";
 
 export const ProcessTopLocation = async (message: Message) => {
   try {
