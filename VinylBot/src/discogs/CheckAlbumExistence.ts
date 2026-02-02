@@ -1,4 +1,5 @@
 import { DiscogsClient } from "@lionralfs/discogs-client";
+import { compareTwoStrings } from "string-similarity";
 
 export const CheckAlbumExistence = async (artist: string, album: string): Promise<boolean> => {
   const client = new DiscogsClient({
@@ -10,29 +11,40 @@ export const CheckAlbumExistence = async (artist: string, album: string): Promis
   });
 
   const db = client.database();
+
   const search = await db.search({
-    artist,
-    release_title: album,
-    type: "master"
+    query: `${artist} ${album}`,
+    type: "master",
+    per_page: 10
   });
 
-  if (!search.data.results.length) return false;
+  const results = search.data.results;
+  if (!results.length) return false;
 
-  const masterId = search.data.results[0].id;
-
-  const versionsRes = await db.getMasterVersions(masterId);
-  const versions = versionsRes.data.versions;
-
-  if (!versions || versions.length === 0) return false;
-
-  return versions.some(v => {
-    const formatStr = (v.format || "").toLowerCase();
-    const majorFormats = (v.major_formats || []).map(f => f.toLowerCase());
-
-    const isVinyl = formatStr.includes("vinyl") || majorFormats.includes("vinyl");
-
-    const isPromo = (v.title || "").toLowerCase().includes("promo");
-
-    return isVinyl && !isPromo;
+  const scoredResults = results.map(r => {
+    const score = compareTwoStrings(`${artist} ${album}`.toLowerCase(), r.title.toLowerCase());
+    return { ...r, score };
   });
+
+  const bestMatches = scoredResults.filter(r => r.score > 0.4).sort((a, b) => b.score - a.score);
+
+  for (const match of bestMatches) {
+    const versionsRes = await db.getMasterVersions(match.id);
+    const versions = versionsRes.data.versions;
+
+    if (!versions) continue;
+
+    const hasVinyl = versions.some(v => {
+      const formatStr = (v.format || "").toLowerCase();
+      const majorFormats = (v.major_formats || []).map(f => f.toLowerCase());
+      const isVinyl = formatStr.includes("vinyl") || majorFormats.includes("vinyl");
+      const isPromo = (v.title || "").toLowerCase().includes("promo");
+
+      return isVinyl && !isPromo;
+    });
+
+    if (hasVinyl) return true;
+  }
+
+  return false;
 };
