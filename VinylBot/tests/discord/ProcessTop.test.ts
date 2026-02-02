@@ -3,7 +3,7 @@ import * as vinylService from '../../src/services/vinyls.api'
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { ComponentType } from "discord.js";
-import {ProcessTop} from '../../src/discord/ProcessTop';
+import {ProcessTop} from '../../src/discord/stats/ProcessTop';
 
 vi.mock("../../src/services/vinyls.api", () => ({
   getArtistVinylCounts: vi.fn(),

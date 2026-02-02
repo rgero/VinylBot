@@ -2,7 +2,7 @@ import * as vinylService from '../../src/services/vinyls.api';
 
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { ProcessPlayCount } from "../../src/discord/ProcessPlayCount";
+import { ProcessPlayCount } from "../../src/discord/stats/ProcessPlayCount";
 
 // Mock the API service
 vi.mock('../../src/services/vinyls.api', () => ({

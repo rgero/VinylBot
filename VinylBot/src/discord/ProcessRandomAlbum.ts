@@ -1,4 +1,5 @@
-import {ActionRowBuilder, ButtonBuilder, ButtonStyle, ComponentType, Message, MessageActionRowComponentBuilder} from "discord.js";
+import { ActionRowBuilder, ButtonBuilder, ButtonStyle, ComponentType, Message, MessageActionRowComponentBuilder } from "discord.js";
+import { getUserById, getUserByName } from "../services/users.api.js";
 import { getVinyls, getVinylsByQuery, getVinylsLikedByUserID } from "../services/vinyls.api.js";
 
 import { PlayLog } from "../interfaces/PlayLog.js";
@@ -7,7 +8,7 @@ import { User } from "../interfaces/User.js";
 import { addPlayLog } from "../services/plays.api.js";
 import { escapeColons } from "../utils/escapeColons.js";
 import { getDropdownValue } from "../utils/discordToDropdown.js";
-import { getUserByName } from "../services/users.api.js";
+import { parseCommand } from "../utils/parseCommand.js";
 
 const buildEmbed = (artist: string, album: string) => {
   const description = `🎵 **${artist}**\n💿 *${album}*`;
@@ -48,29 +49,23 @@ const getRandomVinyl = (list: SearchResponse[]): SearchResponse => {
 
 export const ProcessRandomAlbum = async (message: Message) => {
   try {
-    const args = message.content.split(/\s+/).slice(1);
-    const param = args[0]?.toLowerCase().trim();
+    const context = await parseCommand(message);
+    if (!context) return;
 
     let targetUser: User | null = null;
     let vinyls: SearchResponse[] = [];
 
-    if (param) {
-      targetUser = await getUserByName(param);
-      
+    if (context.type === "user") {
+      targetUser = await getUserById(context.term); 
       if (targetUser) {
-        // User found: get their liked vinyls
         vinyls = (await getVinylsLikedByUserID(targetUser.id)) as SearchResponse[];
-      } else {
-        // Not a username: treat as a general search query
-        const searchTerm = args.join(" ");
-        vinyls = await getVinylsByQuery({ type: "search", term: searchTerm });
-        // Default the "logging" user to the person who sent the message
-        targetUser = await getUserByName(getDropdownValue(message.author.username));
       }
-    } else {
-      // No params: get everything and default to author
+    } else if (context.type === "search") {
+      vinyls = await getVinylsByQuery({ type: "search", term: context.term });
       targetUser = await getUserByName(getDropdownValue(message.author.username));
+    } else {
       vinyls = (await getVinyls()) as SearchResponse[];
+      targetUser = await getUserByName(getDropdownValue(message.author.username));
     }
 
     if (!targetUser) {
@@ -78,7 +73,8 @@ export const ProcessRandomAlbum = async (message: Message) => {
     }
 
     if (!vinyls || vinyls.length === 0) {
-      return message.reply("❌ No matching entries found.");
+      const msg = context.type === "search" ? `❌ No entries found matching "${context.term}".` : "❌ The requested collection is empty.";
+      return message.reply(msg);
     }
 
     let currentVinyl = getRandomVinyl(vinyls);
@@ -89,14 +85,13 @@ export const ProcessRandomAlbum = async (message: Message) => {
 
     const collector = sentMessage.createMessageComponentCollector({
       componentType: ComponentType.Button,
-      time: 5 * 60 * 1000, // 5 minutes
+      time: 5 * 60 * 1000, 
     });
 
     collector.on("collect", async (interaction) => {
-      // Basic security check
       if (interaction.user.id !== message.author.id) {
         return interaction.reply({
-          content: "You can't use these buttons.",
+          content: "Only the person who rolled this can use the buttons.",
           ephemeral: true,
         });
       }
@@ -104,12 +99,10 @@ export const ProcessRandomAlbum = async (message: Message) => {
       if (interaction.customId === "play") {
         collector.stop("played");
 
-        await interaction.update({
-          components: [],
-        });
+        await interaction.update({ components: [] });
 
-        if (!currentVinyl || !currentVinyl.id) {
-          await interaction.followUp({ content: "⚠️ Album was selected, but I couldn't log the play." });
+        if (!currentVinyl?.id) {
+          await interaction.followUp({ content: "⚠️ Album data missing, couldn't log play." });
           return;
         }
 
@@ -126,12 +119,11 @@ export const ProcessRandomAlbum = async (message: Message) => {
           });
         } catch (playErr) {
           console.error("Failed to log play:", playErr);
-          await interaction.followUp({ content: "⚠️ Album was selected, but I couldn't log the play." });
+          await interaction.followUp({ content: "⚠️ Failed to log play to database." });
         }
       }
 
       if (interaction.customId === "reroll") {
-        // Prevent infinite loop if only one vinyl exists
         if (vinyls.length > 1) {
           let nextVinyl;
           do {
@@ -148,17 +140,14 @@ export const ProcessRandomAlbum = async (message: Message) => {
     });
 
     collector.on("end", (_collected, reason) => {
-      // If the user clicked "Play", buttons are already handled
       if (reason === "played") return;
-
       sentMessage.edit({
-          components: [buildRow({ showPlay: true, disabled: true })],
-        }).catch(() => {
-          /* Message likely deleted, ignore */
-        });
+        components: [buildRow({ showPlay: true, disabled: true })],
+      }).catch(() => {});
     });
+
   } catch (err) {
     console.error("Error in ProcessRandomAlbum:", err);
-    await message.reply("❌ Failed to fetch random entry.");
+    await message.reply("❌ An unexpected error occurred.");
   }
 };

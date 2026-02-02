@@ -7,8 +7,9 @@ import { getWantList } from "../services/wantlist.api.js";
 import { parseCommand } from "../utils/parseCommand.js";
 
 export const ProcessList = async (message: Message, listType: 'want' | 'have') => {
-  const args = message.content.split(" ").slice(1).join(" ").trim();
-  let { type, term } = await parseCommand(args);
+  let context = await parseCommand(message);
+  if (!context) return;
+  let { type, term } = context;
 
   try {
     let displayTerm = term; 

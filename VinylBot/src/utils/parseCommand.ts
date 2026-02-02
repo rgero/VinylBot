@@ -1,31 +1,42 @@
-import { getUserByName } from "../services/users.api.js";
-import { isInList } from "./userParser.js";
+import { Message } from "discord.js";
+import { getDropdownValue } from "./discordToDropdown.js";
+import { resolveUserMap } from "./resolveUserMap.js";
 
 export interface CommandContext {
   type: "full" | "user" | "search";
   term: string;
 }
 
-export const parseCommand = async (messageArgs: string): Promise<CommandContext> => {
-  // Split by whitespace and remove empty strings
-  const words = messageArgs.split(/\s+/).filter(Boolean);
+export const parseCommand = async (message: Message): Promise<CommandContext | undefined> => {
+  const words = message.content.split(/\s+/).filter(Boolean);
+  const args = words.slice(1).join(" ").trim();
 
-  // Case 1: "!have" or "!wantlist" (No arguments)
-  if (words.length === 0) {
+  // 1. Handle Mentions (User Mode)
+  const mentions = message.mentions.users.filter(u => !u.bot);
+  
+  if (mentions.size > 0) {
+    if (mentions.size > 1) {
+      await message.reply("⚠️ Only one user can be mentioned at this time.");
+      return undefined;
+    }
+
+    const userMap = await resolveUserMap();
+    const user = mentions.first()!;
+    const name = getDropdownValue(user.username).toLowerCase();
+    const dbIds = userMap.get(name);
+
+    if (dbIds && dbIds[0]) {
+      return { type: "user", term: dbIds[0] };
+    } else {
+      await message.reply(`⚠️ I couldn't find a database entry for **${user.username}**.`);
+      return undefined; 
+    }
+  }
+
+  // 2. Handle Search or Full List
+  if (!args) {
     return { type: "full", term: "" };
   }
 
-  // Case 2: "!have @username" (One argument that matches a known user)
-  // Your 'isInList' utility checks if the word exists in your defined users list
-  if (words.length === 1 && isInList(words[0])) {
-    const user = await getUserByName(words[0]);
-    if (!user) 
-    {
-      throw new Error("Error parsing User");
-    }
-    return { type: "user", term: user.id };
-  }
-
-  // Case 3: "!have Radiohead" (Search term)
-  return { type: "search", term: messageArgs };
+  return { type: "search", term: args };
 };
