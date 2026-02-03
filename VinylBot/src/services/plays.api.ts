@@ -1,34 +1,84 @@
+import { AlbumCount } from "../interfaces/AlbumCount.js";
 import { PlayLog } from "../interfaces/PlayLog.js";
 import supabase from "./supabase.js";
 
+const aggregateAlbumCounts = (playLogs: any[]): AlbumCount[] => {
+  const albumCountMap: Record<number, AlbumCount> = {};
+
+  playLogs.forEach((p) => {
+    const albumId = p.album_id;
+    const artist = p.vinyls?.artist || "Unknown Artist";
+    const album = p.vinyls?.album || "Unknown Album";
+
+    if (albumCountMap[albumId]) {
+      albumCountMap[albumId].count += 1;
+    } else {
+      albumCountMap[albumId] = {
+        title: `${artist} - ${album}`,
+        count: 1,
+      };
+    }
+  });
+
+  return Object.values(albumCountMap).sort((a, b) => b.count - a.count);
+};
+
 export const getPlayLogs = async (): Promise<PlayLog[]> => {
   const { data, error } = await supabase
-    .from('playlogs')
-    .select('*, vinyls(artist, album)'); 
-    
-  if (error) console.error(error);
+    .from("playlogs")
+    .select("*, vinyls(artist, album)");
 
-  return (data ?? []).map(p => ({
+  if (error) {
+    console.error("Error fetching playlogs:", error);
+    return [];
+  }
+
+  return (data ?? []).map((p) => ({
     ...p,
     artist: p.vinyls?.artist,
-    album: p.vinyls?.album
+    album: p.vinyls?.album,
   }));
-}
+};
 
 export const addPlayLog = async (newPlayLog: PlayLog) => {
-  const { error } = await supabase.from('playlogs').insert([{
-    album_id: newPlayLog.album_id,
-    listeners: newPlayLog.listeners,
-    date: newPlayLog.date
-  }]);
-  
+  const { error } = await supabase.from("playlogs").insert([
+    {
+      album_id: newPlayLog.album_id,
+      listeners: newPlayLog.listeners,
+      date: newPlayLog.date,
+    },
+  ]);
+
   if (error) {
     console.error("Error adding playlog:", error);
     throw error;
   }
-}
-export const addPlayLogs = async (newPlayLogs: PlayLog[]) => {
-  const { data, error } = await supabase.from('playlogs').insert(newPlayLogs);
-  if (error) console.error(error);
-  else console.log(data);
-}
+};
+
+export const getTopPlayedAlbumsByUserID = async (userID: string): Promise<AlbumCount[]> => {
+  const { data, error } = await supabase
+    .from("playlogs")
+    .select("album_id, vinyls(artist, album)")
+    .contains("listeners", [userID]);
+
+  if (error) {
+    console.error("Error fetching user plays:", error);
+    return [];
+  }
+
+  return aggregateAlbumCounts(data || []);
+};
+
+export const getSortedPlaysByQuery = async (query: string): Promise<AlbumCount[]> => {
+  const { data, error } = await supabase
+    .from("playlogs")
+    .select("album_id, vinyls!inner(artist, album)")
+    .or(`artist.ilike.%${query}%,album.ilike.%${query}%`, { foreignTable: "vinyls" });
+
+  if (error) {
+    console.error("Error fetching query plays:", error);
+    return [];
+  }
+
+  return aggregateAlbumCounts(data || []);
+};

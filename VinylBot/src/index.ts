@@ -76,10 +76,8 @@ client.on("messageCreate", async (message: Message) => {
         return await ProcessPlayCount(message);
       case "locations":
         return await ProcessTopLocation(message);
-      case undefined:
-        return await ProcessTop(message);
       default:
-        return message.reply("Invalid Query. Valid inputs are `plays` or `locations`.");
+        return await ProcessTop(message);
     }
   }
 

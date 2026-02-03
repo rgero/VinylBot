@@ -1,113 +1,85 @@
-import * as vinylService from '../../src/services/vinyls.api'
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { getArtistVinylCountByUserId, getArtistVinylCounts } from '../../src/services/vinyls.api.js';
 
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { EmbeddedResponse } from '../../src/utils/discord/EmbeddedResponse.js';
+import { ProcessTop } from '../../src/discord/stats/ProcessTop.js'; // Adjust path as needed
+import { getNameById } from '../../src/services/users.api.js';
+import { parseCommand } from '../../src/utils/parseCommand.js';
 
-import { ComponentType } from "discord.js";
-import {ProcessTop} from '../../src/discord/stats/ProcessTop';
+// 1. Mock the dependencies
+vi.mock('../../src/utils/parseCommand.js');
+vi.mock('../../src/services/users.api.js');
+vi.mock('../../src/services/vinyls.api.js');
+vi.mock('../../src/utils/discord/EmbeddedResponse.js');
 
-vi.mock("../../src/services/vinyls.api", () => ({
-  getArtistVinylCounts: vi.fn(),
-}));
-
-describe("ProcessTop Command", () => {
+describe('ProcessTop', () => {
   let mockMessage: any;
-  let mockSentMessage: any;
-  let mockCollector: any;
 
   beforeEach(() => {
     vi.clearAllMocks();
-
-    // Setup Collector Mock
-    const events: Record<string, Function> = {};
-    mockCollector = {
-      on: vi.fn((event, cb) => { events[event] = cb; }),
-      emit: (event: string, ...args: any[]) => events[event]?.(...args),
-    };
-
-    // Setup Sent Message Mock
-    mockSentMessage = {
-      createMessageComponentCollector: vi.fn().mockReturnValue(mockCollector),
-      edit: vi.fn().mockResolvedValue({}),
-    };
-
-    // Setup Initial Message Mock
+    
+    // Create a fake Discord message object
     mockMessage = {
-      author: { id: "user-123" },
-      reply: vi.fn().mockResolvedValue(mockSentMessage),
+      reply: vi.fn(),
+      channel: { send: vi.fn() },
     };
   });
 
-  it("should reply with an error if no albums are returned", async () => {
-    vi.mocked(vinylService.getArtistVinylCounts).mockResolvedValue([]);
+  it('should return early if parseCommand returns undefined', async () => {
+    vi.mocked(parseCommand).mockResolvedValue(undefined);
 
     await ProcessTop(mockMessage);
 
-    expect(mockMessage.reply).toHaveBeenCalledWith(expect.stringContaining("❌ No items found"));
+    expect(EmbeddedResponse).not.toHaveBeenCalled();
   });
 
-  it("should render page 1 and start a collector", async () => {
-    const mockData = Array(15).fill({ artist: "The Beatles", count: 1 });
-    vi.mocked(vinylService.getArtistVinylCounts).mockResolvedValue(mockData);
+  it('should fetch and display top artists for a specific user', async () => {
+    // Setup mocks
+    vi.mocked(parseCommand).mockResolvedValue({ type: 'user', term: '123' });
+    vi.mocked(getNameById).mockResolvedValue('JohnDoe');
+    vi.mocked(getArtistVinylCountByUserId).mockResolvedValue([
+      { title: 'Rise Against', count: 5 }
+    ]);
 
     await ProcessTop(mockMessage);
 
-    // Verify initial reply
-    expect(mockMessage.reply).toHaveBeenCalledWith(
-      expect.objectContaining({
-        embeds: [expect.anything()],
-        components: [expect.anything()],
-      })
-    );
+    // Verify correct APIs were called
+    expect(getNameById).toHaveBeenCalledWith('123');
+    expect(getArtistVinylCountByUserId).toHaveBeenCalledWith('123');
 
-    // Verify collector settings
-    expect(mockSentMessage.createMessageComponentCollector).toHaveBeenCalledWith({
-      componentType: ComponentType.Button,
-      time: 300000,
-    });
+    // Verify the response was sent with correct title
+    expect(EmbeddedResponse).toHaveBeenCalledWith(expect.objectContaining({
+      title: 'Top Artists by Album Count for JohnDoe',
+      list: [{ title: 'Rise Against', count: 5 }]
+    }));
   });
 
-  it("should handle pagination when buttons are clicked", async () => {
-    const mockData = Array(15).fill({ artist: "Daft Punk", count: 2 });
-    vi.mocked(vinylService.getArtistVinylCounts).mockResolvedValue(mockData);
+  it('should fetch and display global top artists when type is not user', async () => {
+    vi.mocked(parseCommand).mockResolvedValue({ type: 'full', term: '' });
+    vi.mocked(getArtistVinylCounts).mockResolvedValue([
+      { title: 'Thrice', count: 10 }
+    ]);
 
     await ProcessTop(mockMessage);
 
-    // Simulate "next" button click
-    const mockInteraction = {
-      user: { id: "user-123" },
-      customId: "next",
-      update: vi.fn().mockResolvedValue({}),
-    };
-
-    // Manually trigger the 'collect' event
-    await mockCollector.emit("collect", mockInteraction);
-
-    expect(mockInteraction.update).toHaveBeenCalledWith(
-      expect.objectContaining({
-        embeds: [
-          expect.objectContaining({
-            data: expect.objectContaining({
-              title: expect.stringContaining("Page 2/2"),
-            }),
-          }),
-        ],
-      })
-    );
+    expect(getArtistVinylCounts).toHaveBeenCalled();
+    expect(EmbeddedResponse).toHaveBeenCalledWith(expect.objectContaining({
+      title: 'Top Artists by Album Count',
+      list: [{ title: 'Thrice', count: 10 }]
+    }));
   });
 
-  it("should reject interactions from other users", async () => {
-    vi.mocked(vinylService.getArtistVinylCounts).mockResolvedValue([{ artist: "A", count: 1 }]);
+  it('should handle errors gracefully and reply with an error message', async () => {
+    vi.mocked(parseCommand).mockResolvedValue({ type: 'full', term: '' });
+    vi.mocked(getArtistVinylCounts).mockRejectedValue(new Error('DB Down'));
+
+    // Silence the expected console.error in test output
+    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+
     await ProcessTop(mockMessage);
 
-    const mockInteraction = {
-      user: { id: "wrong-user" },
-      reply: vi.fn().mockResolvedValue({}),
-    };
-
-    await mockCollector.emit("collect", mockInteraction);
-
-    expect(mockInteraction.reply).toHaveBeenCalledWith(
-      expect.objectContaining({ content: "You can't control this pagination.", ephemeral: true })
-    );
+    expect(mockMessage.reply).toHaveBeenCalledWith(expect.stringContaining('⚠️ An error occurred'));
+    
+    consoleSpy.mockRestore();
   });
 });

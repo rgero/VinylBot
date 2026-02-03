@@ -1,4 +1,4 @@
 export interface AlbumCount {
-  artist: string,
+  title: string,
   count: number
 }

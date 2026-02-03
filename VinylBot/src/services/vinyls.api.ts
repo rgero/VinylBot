@@ -1,6 +1,7 @@
 import { AlbumCount } from "../interfaces/AlbumCount.js";
 import { SearchResponse } from "../interfaces/SearchResponse.js";
 import { Vinyl } from "../interfaces/Vinyl.js";
+import { escapeColons } from "../utils/escapeColons.js";
 import supabase from "./supabase.js";
 
 /**
@@ -150,11 +151,24 @@ export const getArtistVinylCounts = async (): Promise<AlbumCount[]> => {
     return acc;
   }, {});
 
-  return Object.entries(counts).map(([artist, count]) => ({ artist, count })).sort((a, b) => b.count - a.count);
+  return Object.entries(counts).map(([title, count]) => ({ title, count })).sort((a, b) => b.count - a.count);
 };
 
-export const getVinylsByPlayCount = async (): Promise<Vinyl[]> => {
+export const getVinylsByPlayCount = async (): Promise<AlbumCount[]> => {
   const { data, error } = await supabase.from('vinyls').select('*').order('playCount', { ascending: false })
   if (error) throw error;
-  return data ?? [];
+  
+  return data.map(vinyl => ({ title: `${vinyl.artist} - ${vinyl.album}`, count: vinyl.playCount || 0 }));
 };
+
+export const getArtistVinylCountByUserId = async (userID: string): Promise<AlbumCount[]> => {
+  const { data, error } = await supabase.from('vinyls').select('artist').contains('owners', [userID]);
+  if (error) throw error;
+  
+  const counts = data.reduce((acc: Record<string, number>, curr) => {
+    acc[curr.artist] = (acc[curr.artist] || 0) + 1;
+    return acc;
+  }, {});
+
+  return Object.entries(counts).map(([title, count]) => ({ title, count })).sort((a, b) => b.count - a.count);
+}
