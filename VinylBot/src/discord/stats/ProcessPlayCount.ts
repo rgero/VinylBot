@@ -16,18 +16,21 @@ export const ProcessPlayCount = async (message: Message) => {
     let list = [];
     let titleSuffix = "";
 
+    if (term) {
+      term = term.replace(/^plays\s*/i, "").trim();
+    }
+    
+    if (!term && type === "search") {
+      type = "full"; 
+    }
+
     switch (type) {
       case "user":
-
         const [userName, userList] = await Promise.all([getNameById(term),getTopPlayedAlbumsByUserID(term)]);
         list = userList;
         titleSuffix = `for ${userName}`;
         break;
-
       case "search":
-        if (term) {
-          term = term.replace(/^plays\s+/i, "").trim();
-        }
         list = await getSortedPlaysByQuery(term);
         titleSuffix = `matching "${term}"`;
         break;
