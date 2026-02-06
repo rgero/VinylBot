@@ -18,3 +18,8 @@ export interface Vinyl {
   imageUrl: string;
   doubleLP: boolean;
 }
+
+export type VinylWithLocation = {
+  owners: string[];
+  purchaseLocation: { name: string };
+};
