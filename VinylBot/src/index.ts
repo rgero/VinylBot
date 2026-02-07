@@ -30,12 +30,12 @@ client.on("messageCreate", async (message: Message) => {
   if (message.author.bot) return;
 
   const targetMessage = message.content.toLocaleLowerCase();
-  if (targetMessage.startsWith("!want "))
+  if (targetMessage.startsWith("!want"))
   {
     return await ProcessWant(message);
   }
 
-  if (targetMessage.startsWith("!play "))
+  if (targetMessage.startsWith("!play"))
   {
     return await ProcessPlay(message);
   }

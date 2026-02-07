@@ -6,6 +6,7 @@ import { escapeColons } from "../utils/escapeColons.js";
 import { getDropdownValue } from "../utils/discordToDropdown.js";
 import { getSpotifyData } from "../spotify/getSpotifyData.js";
 import { getUserByName } from "../services/users.api.js";
+import { haveVinyl } from "../services/vinyls.api.js";
 import { parseSpotifyUrl } from "../spotify/parseSpotifyUrl.js";
 
 export const ProcessWant = async (message: Message) => {
@@ -28,6 +29,12 @@ export const ProcessWant = async (message: Message) => {
     }
 
     const { artists, albumName, albumArt, releaseDate, totalTracks } = spotifyData;
+
+    // Check if the album already exists in the vinyls table.
+    const exists = await haveVinyl({artist: artists, album: albumName});
+    if (exists) {
+      return message.reply("⚠️ You already own this.");
+    }
 
     const status = await addWantedItem({artist: artists, album: albumName,imageUrl: albumArt,notes,searcher: [userID.id]});
     if (status === "ERROR") {

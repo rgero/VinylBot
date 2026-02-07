@@ -172,3 +172,15 @@ export const getArtistVinylCountByUserId = async (userID: string): Promise<Album
 
   return Object.entries(counts).map(([title, count]) => ({ title, count })).sort((a, b) => b.count - a.count);
 }
+
+export const haveVinyl = async (query: {artist: string, album: string}): Promise<boolean> => {
+  const { data, error } = await supabase
+    .from("vinyls")
+    .select("id")
+    .ilike("artist", query.artist)
+    .ilike("album", query.album)
+    .maybeSingle();
+  
+  if (error) throw error;
+  return !!data;
+}
