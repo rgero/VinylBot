@@ -82,7 +82,6 @@ const ProcessMultiple = async (message: Message, data: Vinyl[]) => {
       const embed = buildVinylEmbed(selected);
 
       await int.update({
-        content: "✅ Record found:",
         embeds: [embed],
         components: [],
       });

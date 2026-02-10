@@ -1,7 +1,6 @@
 import { AlbumCount } from "../interfaces/AlbumCount.js";
 import { SearchResponse } from "../interfaces/SearchResponse.js";
 import { Vinyl } from "../interfaces/Vinyl.js";
-import { escapeColons } from "../utils/escapeColons.js";
 import supabase from "./supabase.js";
 
 /**
@@ -42,7 +41,7 @@ export const getVinylsByQuery = async (query: { type: string; term: string }): P
 };
 
 export const getFullVinylsByQuery = async (term: string): Promise<Vinyl[]> => {
-  const { data, error } = await supabase.from('vinyls').select(`*, purchaseLocation:locations (name)`).ilike('album', `%${term}%`);
+  const { data, error } = await supabase.from('vinyls').select(`*, purchaseLocation:locations (name)`).or(`artist.ilike.%${term}%,album.ilike.%${term}%`);;
   if (error) throw error;
   return data ?? [];
 }
