@@ -1,3 +1,4 @@
+import { DiscogResponse } from "../interfaces/DiscogResponse";
 import { DiscogsClient } from "@lionralfs/discogs-client";
 import { compareTwoStrings } from "string-similarity";
 
@@ -8,7 +9,7 @@ const extractAlbumTitle = (discogsTitle: string) => {
   return parts.length > 1 ? parts.slice(1).join(" - ") : discogsTitle;
 };
 
-export const CheckAlbumExistence = async (artist: string, album: string): Promise<boolean> => {
+export const CheckAlbumExistence = async (artist: string, album: string): Promise<DiscogResponse|null> => {
   const client = new DiscogsClient({
     auth: {
       method: "discogs",
@@ -26,7 +27,7 @@ export const CheckAlbumExistence = async (artist: string, album: string): Promis
   });
 
   const results = search.data.results;
-  if (!results.length) return false;
+  if (!results.length) return null;
 
   const targetAlbum = normalize(album);
 
@@ -56,8 +57,11 @@ export const CheckAlbumExistence = async (artist: string, album: string): Promis
       return isVinyl && !isPromo;
     });
 
-    if (hasVinyl) return true;
+    if (hasVinyl) return {
+      title: match.title,
+      cover: match.cover_image,
+    };
   }
 
-  return false;
+  return null;
 };
