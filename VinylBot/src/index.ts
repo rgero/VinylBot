@@ -29,73 +29,53 @@ client.once("ready", () => {
 
 client.on("messageCreate", async (message: Message) => {
   if (message.author.bot) return;
+  if (!message.content.startsWith("!")) return;
 
-  const targetMessage = message.content.toLocaleLowerCase();
-  if (targetMessage.startsWith("!want"))
-  {
-    return await ProcessWant(message);
-  }
+  const args = message.content.slice(1).trim().split(/\s+/);
+  const command = args[0].toLowerCase();
 
-  if (targetMessage.startsWith("!play"))
-  {
-    return await ProcessPlay(message);
-  }
+  switch (command) {
+    case "wantlist":
+      return await ProcessList(message, "want");
 
-  if (targetMessage.startsWith("!random")) {
-    const args = message.content.split(" ").slice(1);
-    const param = args[0]?.toLowerCase();
-    if (param === "store")
-    {
-      ProcessRandomStore(message);
-    } else {
-      ProcessRandomAlbum(message);
-    }
-    return;
-  }
+    case "want":
+      return await ProcessWant(message);
 
-  if(targetMessage.startsWith("!wantlist"))
-  {
-    return await ProcessList(message, 'want');
-  }
+    case "have":
+      return await ProcessList(message, "have");
 
-  if(targetMessage.startsWith("!have"))
-  {
-    return await ProcessList(message, 'have');
-  }
+    case "play":
+      return await ProcessPlay(message);
 
-  if(targetMessage.startsWith("!add"))
-  {
-    return await ProcessAdd(message)
-  }
-  
-  if (targetMessage.startsWith("!top")) {
-    const args = message.content.split(" ").slice(1);
-    const param = args[0]?.toLowerCase();
+    case "random":
+      return args[1]?.toLowerCase() === "store"
+        ? await ProcessRandomStore(message)
+        : await ProcessRandomAlbum(message);
 
-    switch (param) {
-      case "plays":
-        return await ProcessPlayCount(message);
-      case "locations":
-        return await ProcessTopLocation(message);
-      default:
-        return await ProcessTop(message);
-    }
-  }
+    case "add":
+      return await ProcessAdd(message);
 
-  if (targetMessage.startsWith("!info"))
-  {
-    return await ProcessInfo(message);
-  }
+    case "top":
+      switch (args[1]?.toLowerCase()) {
+        case "plays":
+          return await ProcessPlayCount(message);
+        case "locations":
+          return await ProcessTopLocation(message);
+        default:
+          return await ProcessTop(message);
+      }
 
-  if(targetMessage.startsWith("!exists"))
-  {
-    return await ProcessCheckExists(message);
-  }
+    case "info":
+      return await ProcessInfo(message);
 
-  if (targetMessage.startsWith("!help")) {
-    return await ProcessHelp(message);
+    case "exists":
+      return await ProcessCheckExists(message);
+
+    case "help":
+      return await ProcessHelp(message);
   }
 });
+
 
 // Log in to Discord
 client.login(process.env.DISCORD_TOKEN);
