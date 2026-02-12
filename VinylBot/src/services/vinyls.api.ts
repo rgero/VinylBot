@@ -96,7 +96,7 @@ export const searchVinyls = async (term: string): Promise<SearchResponse[]> => {
  */
 export type AddStatus = "ADDED" | "DUPLICATE" | "ERROR";
 export const addVinyl = async (newVinyl: Omit<Vinyl, 'id'>): Promise<AddStatus> => {
-  const { data, error } = await supabase.rpc('insert_vinyl_with_number', { payload: newVinyl});
+  const { data, error } = await supabase.from("vinyls").insert({ ...newVinyl, playCount: 0 }).select('*').single();
   if (error) {
     if (error.code === '23505') {
       return "DUPLICATE";
