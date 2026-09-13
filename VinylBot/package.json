@@ -31,7 +31,7 @@
     "@types/node": "^25.0.2",
     "@types/string-similarity": "^4.0.2",
     "@vitest/coverage-v8": "^4.1.9",
-    "csv-parse": "^6.2.1",
+    "csv-parse": "^7.0.2",
     "ts-node": "^10.9.2",
     "tsx": "^4.21.0",
     "typescript": "^5.9.3",
