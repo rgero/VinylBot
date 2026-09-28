@@ -8,31 +8,38 @@ import { Vinyl } from "../../interfaces/Vinyl.js";
 import { addPlayLog } from "../../services/plays.api.js";
 import { getDropdownValue } from "../../utils/discordToDropdown.js";
 import { getUnplayedVinyls } from "../../services/vinyls.api.js";
-import { getUserByName } from "../../services/users.api.js";
+import { getUserById, getUserByName } from "../../services/users.api.js";
+import { parseTagsFlag } from "../../utils/tagFilters.js";
 
 export const ProcessRandomUnplayedAlbum = async (message: Message, context: CommandContext) => {
   try {
-    const { query, mentions } = context;
+    const { query, mentions, flags } = context;
 
     if (mentions && mentions.length > 1) {
       await message.reply("❌ Can only have 1 mention");
       return;
     }
 
-    const currentUserName = getDropdownValue(message.author.username, message.author.id);
-    const targetUser: User | null = await getUserByName(currentUserName);
+    const isMention = mentions?.length === 1;
+    const targetUser: User | null = isMention
+      ? await getUserById(mentions[0])
+      : await getUserByName(getDropdownValue(message.author.username, message.author.id));
 
     if (!targetUser) {
       return message.reply("❌ No matching user profile found for logging.");
     }
 
-    const vinyls = await getUnplayedVinyls(targetUser.id, query || undefined);
-    const titleSuffix = "Random Pick from Your Unplayed";
+    const tags = parseTagsFlag(flags?.tags);
+    const vinyls = await getUnplayedVinyls(targetUser.id, query || undefined, undefined, tags);
+    const owner = isMention ? `${targetUser.name}'s` : "Your";
+    const titleSuffix = `Random Pick from ${owner} Unplayed${tags.length ? " by Tags" : ""}`;
 
     if (!vinyls || vinyls.length === 0) {
       const msg = query
         ? `❌ No entries found matching "${query}".`
-        : "❌ The requested collection is empty.";
+        : tags.length
+          ? `❌ No unplayed entries found with tags "${tags.join(", ")}".`
+          : "❌ The requested collection is empty.";
       return message.reply(msg);
     }
 

@@ -3,7 +3,7 @@ import { getUserById, getUserByName } from '../../../src/services/users.api'
 
 import { ProcessRandomAlbum } from '../../../src/discord/random/ProcessRandomAlbum';
 import { Vinyl } from '../../../src/interfaces/Vinyl';
-import { getVinyls } from '../../../src/services/vinyls.api';
+import { getVinyls, getVinylsByQuery, getVinylsLikedByUserID } from '../../../src/services/vinyls.api';
 import { parseCommand } from '../../../src/utils/parseCommand';
 
 vi.mock('../../../src/utils/parseCommand');
@@ -85,6 +85,60 @@ describe('ProcessRandomAlbum', () => {
     }));
 
     expect(mockCollector.on).toHaveBeenCalledWith('collect', expect.any(Function));
+  });
+
+  it('should filter a mentioned user\'s likes by tags', async () => {
+    const context = { mentions: ['uuid-2' as any], flags: { tags: 'emo,punk' }, query: '' };
+    vi.mocked(getUserByName).mockResolvedValue({ id: '1', name: 'testuser' } as any);
+    vi.mocked(getUserById).mockResolvedValue({ id: 'uuid-2', name: 'Alice' } as any);
+    vi.mocked(getVinylsLikedByUserID).mockResolvedValue([
+      { id: 'v1', artist: 'A', album: 'One', tags: ['jazz'] },
+      { id: 'v2', artist: 'B', album: 'Two', tags: ['Punk'] },
+    ] as unknown as Vinyl[]);
+
+    await ProcessRandomAlbum(mockMessage, context);
+
+    expect(mockMessage.reply).toHaveBeenCalledWith(expect.objectContaining({
+      embeds: [expect.objectContaining({ title: '🎲 Random Pick liked by Alice tagged emo, punk' })],
+    }));
+  });
+
+  it('should report when no entries match the tags', async () => {
+    const context = { mentions: [], flags: { tags: 'emo' }, query: '' };
+    vi.mocked(getUserByName).mockResolvedValue({ id: '1', name: 'testuser' } as any);
+    vi.mocked(getVinyls).mockResolvedValue([{ id: 'v1', artist: 'A', album: 'One', tags: ['jazz'] }] as unknown as Vinyl[]);
+
+    await ProcessRandomAlbum(mockMessage, context);
+
+    expect(mockMessage.reply).toHaveBeenCalledWith('❌ No entries found with tags "emo".');
+  });
+
+  it('should filter search results by tags', async () => {
+    const context = { mentions: [], flags: { tags: 'emo' }, query: 'alpha' };
+    vi.mocked(getUserByName).mockResolvedValue({ id: '1', name: 'testuser' } as any);
+    vi.mocked(getVinylsByQuery).mockResolvedValue([
+      { id: 'v1', artist: 'Alpha', album: 'One', tags: ['jazz'] },
+      { id: 'v2', artist: 'Alpha', album: 'Two', tags: ['emo'] },
+    ] as unknown as Vinyl[]);
+
+    await ProcessRandomAlbum(mockMessage, context);
+
+    expect(getVinylsByQuery).toHaveBeenCalledWith({ type: 'search', term: 'alpha' });
+    expect(mockMessage.reply).toHaveBeenCalledWith(expect.objectContaining({
+      embeds: [expect.objectContaining({ title: '🎲 Random Pick tagged emo' })],
+    }));
+  });
+
+  it('should report when no search results match the tags', async () => {
+    const context = { mentions: [], flags: { tags: 'emo' }, query: 'alpha' };
+    vi.mocked(getUserByName).mockResolvedValue({ id: '1', name: 'testuser' } as any);
+    vi.mocked(getVinylsByQuery).mockResolvedValue([
+      { id: 'v1', artist: 'Alpha', album: 'One', tags: ['jazz'] },
+    ] as unknown as Vinyl[]);
+
+    await ProcessRandomAlbum(mockMessage, context);
+
+    expect(mockMessage.reply).toHaveBeenCalledWith('❌ No entries found matching "alpha" with tags "emo".');
   });
 
   it('should handle the cancel button interaction correctly', async () => {

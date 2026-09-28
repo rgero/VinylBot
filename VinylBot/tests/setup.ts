@@ -14,6 +14,7 @@ const makeQueryBuilder = (result: QueryResult = { data: [], error: null }) => {
     'eq',
     'ilike',
     'contains',
+    'overlaps',
     'order',
     'limit',
     'range',

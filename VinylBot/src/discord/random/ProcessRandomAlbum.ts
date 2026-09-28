@@ -1,7 +1,8 @@
 import { ComponentType, Message } from "discord.js";
 import { attachRandomAlbumCollector, buildAlbumEmbed, buildAlbumRow, getRandomItem } from "./utils/randomAlbumUtils.js";
 import { getUserById, getUserByName } from "../../services/users.api.js";
-import { getVinyls, getVinylsByQuery, getVinylsByTags, getVinylsLikedByUserID } from "../../services/vinyls.api.js";
+import { getVinyls, getVinylsByQuery, getVinylsLikedByUserID } from "../../services/vinyls.api.js";
+import { filterVinylsByTags, parseTagsFlag } from "../../utils/tagFilters.js";
 
 import { CommandContext } from "../../utils/parseCommand.js";
 import { PlayLog } from "../../interfaces/PlayLog.js";
@@ -25,10 +26,7 @@ export const ProcessRandomAlbum = async (message: Message, context: CommandConte
     }
 
     targetUser = await getUserByName(getDropdownValue(message.author.username, message.author.id));
-    if (flags.tags) {
-      vinyls = await getVinylsByTags(flags.tags.toString().split(','))
-      titleSuffix = "by Tags"
-    } else if (mentions.length === 1) {
+    if (mentions.length === 1) {
       targetUser = await getUserById(mentions[0]); 
       titleSuffix = `liked by ${targetUser ? targetUser.name : "Unknown User"}`;
       if (targetUser) {
@@ -36,10 +34,14 @@ export const ProcessRandomAlbum = async (message: Message, context: CommandConte
       }
     } else if (query) {
       vinyls = await getVinylsByQuery({ type: "search", term: query });
-      targetUser = await getUserByName(getDropdownValue(message.author.username, message.author.id));
     } else {
       vinyls = await getVinyls();
-      targetUser = await getUserByName(getDropdownValue(message.author.username, message.author.id));
+    }
+
+    const tags = parseTagsFlag(flags.tags);
+    if (tags.length) {
+      vinyls = filterVinylsByTags(vinyls ?? [], tags);
+      titleSuffix = `${titleSuffix} tagged ${tags.join(", ")}`.trim();
     }
 
     if (!targetUser) {
@@ -47,7 +49,11 @@ export const ProcessRandomAlbum = async (message: Message, context: CommandConte
     }
 
     if (!vinyls || vinyls.length === 0) {
-      const msg = query ? `❌ No entries found matching "${query}".` : "❌ The requested collection is empty.";
+      const msg = query
+        ? `❌ No entries found matching "${query}"${tags.length ? ` with tags "${tags.join(", ")}"` : ""}.`
+        : tags.length
+          ? `❌ No entries found with tags "${tags.join(", ")}".`
+          : "❌ The requested collection is empty.";
       return message.reply(msg);
     }
 

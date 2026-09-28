@@ -40,6 +40,7 @@ const makeAwaitableBuilder = (result: any) => {
     select: vi.fn(() => builder),
     order: vi.fn(() => builder),
     contains: vi.fn(() => builder),
+    overlaps: vi.fn(() => builder),
     or: vi.fn(() => builder),
     eq: vi.fn(() => builder),
     insert: vi.fn(() => builder),
@@ -70,7 +71,7 @@ describe('vinyls.api', () => {
 
     expect(builder.contains).toHaveBeenCalledWith('owners', ['u1']);
     expect(builder.or).toHaveBeenCalledWith('artist.wfts.rise against,album.wfts.rise against');
-    expect(builder.contains).toHaveBeenCalledWith('tags', ['punk']);
+    expect(builder.overlaps).toHaveBeenCalledWith('tags', ['punk']);
     expect(result).toEqual([{ artist: 'A', album: 'B', playCount: 0 }]);
   });
 
@@ -156,6 +157,37 @@ describe('vinyls.api', () => {
     expect(sortItemsMock).toHaveBeenCalled();
   });
 
+  it('getUnplayedVinyls keeps vinyls matching any tag', async () => {
+    rpcMock.mockResolvedValue({
+      data: [
+        { artist: 'A', album: 'One', tags: ['Emo'] },
+        { artist: 'B', album: 'Two', tags: ['punk'] },
+        { artist: 'C', album: 'Three', tags: ['jazz'] },
+        { artist: 'D', album: 'Four' },
+      ],
+      error: null,
+    });
+
+    const result = await getUnplayedVinyls('u1', undefined, undefined, ['emo', 'punk']);
+
+    expect(result.map((v) => v.artist)).toEqual(['A', 'B']);
+  });
+
+  it('getUnplayedVinyls combines query and tags', async () => {
+    rpcMock.mockResolvedValue({
+      data: [
+        { artist: 'Alpha', album: 'One', tags: ['emo'] },
+        { artist: 'Alpha', album: 'Two', tags: ['jazz'] },
+        { artist: 'Beta', album: 'Three', tags: ['emo'] },
+      ],
+      error: null,
+    });
+
+    const result = await getUnplayedVinyls('u1', 'alpha', undefined, ['emo']);
+
+    expect(result).toEqual([{ artist: 'Alpha', album: 'One', tags: ['emo'] }]);
+  });
+
   it('getUnplayedVinylCounts returns empty array on rpc error', async () => {
     const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
     rpcMock.mockResolvedValue({ data: null, error: new Error('rpc') });
@@ -238,9 +270,9 @@ describe('vinyls.api', () => {
     const builder = makeAwaitableBuilder({ data: [{ artist: 'A', album: 'B' }], error: null });
     fromMock.mockReturnValue(builder);
 
-    const result = await getVinylsByTags(['  Punk ', 'InDie']);
+    const result = await getVinylsByTags(['  Punk ', 'InDie', ' ']);
 
-    expect(builder.contains).toHaveBeenCalledWith('tags', ['punk', 'indie']);
+    expect(builder.overlaps).toHaveBeenCalledWith('tags', ['punk', 'indie']);
     expect(result).toEqual([{ artist: 'A', album: 'B', playCount: 0 }]);
   });
 

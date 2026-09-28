@@ -72,7 +72,7 @@ export const ProcessPlayCount = async (message: Message, context: CommandContext
       titleSuffix += " (Ascending)";
     }
 
-    if (flags["count"] !== undefined && !isNaN(Number(flags["count"]))) {
+    if (typeof flags["count"] === "string" && !isNaN(Number(flags["count"]))) {
       const targetCount = Number(flags["count"]);
       list = list.filter((item) =>
         needReverse ? item.count <= targetCount : item.count >= targetCount

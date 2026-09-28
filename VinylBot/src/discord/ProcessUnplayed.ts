@@ -7,6 +7,7 @@ import { UUID } from "node:crypto";
 import { escapeColons } from "../utils/escapeColons.js";
 import { getDropdownValue } from "../utils/discordToDropdown.js";
 import { getNameById } from "../services/users.api.js";
+import { parseTagsFlag } from "../utils/tagFilters.js";
 import { resolveUserMap } from "../utils/resolveUserMap.js";
 import { validSorts } from "../utils/sortItems.js";
 
@@ -61,7 +62,8 @@ export const ProcessUnplayed = async (message: Message) => {
     }
 
     const userID = mentions[0] ?? targetIDs[0];
-    let data = await getUnplayedVinyls(userID, query, sort);
+    const tags = parseTagsFlag(flags.tags);
+    let data = await getUnplayedVinyls(userID, query, sort, tags);
 
     if (!data || data.length === 0) {
       return message.reply("🎉 No unplayed records found!");
@@ -75,7 +77,7 @@ export const ProcessUnplayed = async (message: Message) => {
 
     return await EmbeddedResponse({
       message,
-      title: `Unplayed Vinyls (${data.length} total)`,
+      title: `Unplayed Vinyls${tags.length ? ` tagged ${tags.join(", ")}` : ""} (${data.length} total)`,
       list: data,
       formatItem: (item, idx) => `${idx + 1}. **${escapeColons(item.artist)}** - ${escapeColons(item.album)}`,
       color: 0x3498db,

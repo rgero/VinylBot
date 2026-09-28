@@ -3,7 +3,9 @@ import { UUID } from "node:crypto";
 import { getDropdownValue } from "./discordToDropdown.js";
 import { resolveUserMap } from "./resolveUserMap.js";
 
-const VALUE_FLAGS = ["count", "dir", "limit", "number", "sort", "tags"];
+const VALUE_FLAGS = ["dir", "limit", "number", "sort", "tags"];
+// Boolean on its own; takes the next token as its value only if it is a number.
+const OPTIONAL_NUMERIC_FLAGS = ["count"];
 
 export interface CommandContext {
   mentions: UUID[];
@@ -49,7 +51,14 @@ export const parseCommand = async (message: Message): Promise<ParseCommandResult
       const nextToken = tokens[i + 1];
       const expectsValue = VALUE_FLAGS.includes(flagName);
 
-      if (expectsValue) {
+      if (OPTIONAL_NUMERIC_FLAGS.includes(flagName)) {
+        if (nextToken && /^\d+$/.test(nextToken)) {
+          returnValue.flags[flagName] = nextToken;
+          i++;
+        } else {
+          returnValue.flags[flagName] = true;
+        }
+      } else if (expectsValue) {
         // ERROR HANDLING: Check if nextToken is missing or is another flag/mention
         if (!nextToken || nextToken.startsWith("--") || nextToken.startsWith("<@") || nextToken.startsWith("—")) {
           return {

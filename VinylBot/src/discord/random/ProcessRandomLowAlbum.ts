@@ -1,6 +1,7 @@
 import { attachRandomAlbumCollector, buildAlbumEmbed, buildAlbumRow, getRandomItem } from "./utils/randomAlbumUtils.js";
 import { getUserById, getUserByName } from "../../services/users.api.js";
-import { getVinyls, getVinylsByQuery, getVinylsByTags, getVinylsLikedByUserID } from "../../services/vinyls.api.js";
+import { getVinyls, getVinylsByQuery, getVinylsLikedByUserID } from "../../services/vinyls.api.js";
+import { filterVinylsByTags, parseTagsFlag } from "../../utils/tagFilters.js";
 
 import { CommandContext } from "../../utils/parseCommand.js";
 import { Message } from "discord.js";
@@ -23,10 +24,7 @@ export const ProcessRandomLowAlbum = async (message: Message, context: CommandCo
     let vinyls: Vinyl[] = [];
     let titleSuffix = "";
 
-    if (flags.tags) {
-      vinyls = await getVinylsByTags(flags.tags.toString().split(","));
-      titleSuffix = "by Tags";
-    } else if (mentions.length === 1) {
+    if (mentions.length === 1) {
       if (flags.mine) {
         await message.reply("❌ Invalid usage. Use either --mine or mention a user, not both.");
         return;
@@ -46,8 +44,18 @@ export const ProcessRandomLowAlbum = async (message: Message, context: CommandCo
       titleSuffix = "(All Time)";
     }
 
+    const tags = parseTagsFlag(flags.tags);
+    if (tags.length) {
+      vinyls = filterVinylsByTags(vinyls ?? [], tags);
+      titleSuffix += ` tagged ${tags.join(", ")}`;
+    }
+
     if (!vinyls || vinyls.length === 0) {
-      const msg = query ? `❌ No entries found matching "${query}".` : "❌ The requested collection is empty.";
+      const msg = query
+        ? `❌ No entries found matching "${query}"${tags.length ? ` with tags "${tags.join(", ")}"` : ""}.`
+        : tags.length
+          ? `❌ No entries found with tags "${tags.join(", ")}".`
+          : "❌ The requested collection is empty.";
       return message.reply(msg);
     }
 

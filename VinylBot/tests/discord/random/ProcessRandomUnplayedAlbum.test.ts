@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { ProcessRandomUnplayedAlbum } from '../../../src/discord/random/ProcessRandomUnplayedAlbum';
 import { getUnplayedVinyls } from '../../../src/services/vinyls.api';
-import { getUserByName } from '../../../src/services/users.api';
+import { getUserById, getUserByName } from '../../../src/services/users.api';
 
 vi.mock('../../../src/services/vinyls.api');
 vi.mock('../../../src/services/users.api');
@@ -54,5 +54,31 @@ describe('ProcessRandomUnplayedAlbum', () => {
     expect(message.reply).toHaveBeenCalledWith(expect.objectContaining({
       embeds: [expect.objectContaining({ title: expect.stringContaining('from Your Unplayed') })],
     }));
+  });
+
+  it('uses the mentioned user and passes tags through', async () => {
+    const context = { mentions: ['uuid-2'], flags: { tags: 'Emo,punk' }, query: '' } as any;
+    vi.mocked(getUserById).mockResolvedValue({ id: 'uuid-2', name: 'Alice' } as any);
+    vi.mocked(getUnplayedVinyls).mockResolvedValue([{ id: 'v1', artist: 'A', album: 'One' }] as any);
+
+    const message = createMessage();
+    await ProcessRandomUnplayedAlbum(message, context);
+
+    expect(getUserByName).not.toHaveBeenCalled();
+    expect(getUnplayedVinyls).toHaveBeenCalledWith('uuid-2', undefined, undefined, ['emo', 'punk']);
+    expect(message.reply).toHaveBeenCalledWith(expect.objectContaining({
+      embeds: [expect.objectContaining({ title: expect.stringContaining("from Alice's Unplayed by Tags") })],
+    }));
+  });
+
+  it('reports empty results for tags', async () => {
+    const context = { mentions: [], flags: { tags: 'emo' }, query: '' } as any;
+    vi.mocked(getUserByName).mockResolvedValue({ id: '1', name: 'testuser' } as any);
+    vi.mocked(getUnplayedVinyls).mockResolvedValue([]);
+
+    const message = createMessage();
+    await ProcessRandomUnplayedAlbum(message, context);
+
+    expect(message.reply).toHaveBeenCalledWith('❌ No unplayed entries found with tags "emo".');
   });
 });

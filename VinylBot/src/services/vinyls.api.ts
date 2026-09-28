@@ -3,6 +3,7 @@ import { ItemCount } from "../interfaces/ItemCount.js";
 import { UUID } from "node:crypto";
 import { Vinyl } from "../interfaces/Vinyl.js";
 import { VinylSearchQuery } from "../interfaces/VinylSearchQuery.js";
+import { filterVinylsByTags } from "../utils/tagFilters.js";
 import { sortItems } from "../utils/sortItems.js";
 import supabase from "./supabase.js";
 
@@ -67,7 +68,7 @@ export const getVinylsBySearchQuery = async (searchQuery: VinylSearchQuery): Pro
   }
 
   if (searchQuery.tags?.length) {
-    dbQuery = dbQuery.contains("tags", searchQuery.tags);
+    dbQuery = dbQuery.overlaps("tags", searchQuery.tags);
   }
 
   const { data, error } = await dbQuery;
@@ -122,11 +123,11 @@ export const getVinylID = async (artist: string, album: string): Promise<number 
 };
 
 export const getVinylsByTags = async (tags: string[]): Promise<Vinyl[]> => {
-  const normalizedTags = tags.map((tag) => tag.trim().toLowerCase());
+  const normalizedTags = tags.map((tag) => tag.trim().toLowerCase()).filter(Boolean);
   const { data, error } = await supabase
     .from("vinyls")
     .select(VINYL_SELECT)
-    .contains("tags", normalizedTags);
+    .overlaps("tags", normalizedTags);
 
   if (error) throw error;
   return hydrateVinyls((data ?? []) as VinylRow[]);
@@ -192,7 +193,7 @@ export const haveVinyl = async (query: { artist: string; album: string }): Promi
   return !!data;
 };
 
-export const getUnplayedVinyls = async (userId: string, query?: string, sort?: string): Promise<Vinyl[]> => {
+export const getUnplayedVinyls = async (userId: string, query?: string, sort?: string, tags?: string[]): Promise<Vinyl[]> => {
   const { data, error } = await supabase.rpc("get_unplayed_vinyls", { target_user_id: userId });
 
   if (error) {
@@ -204,6 +205,10 @@ export const getUnplayedVinyls = async (userId: string, query?: string, sort?: s
 
   if (query) {
     filteredVinyls = filteredVinyls.filter((vinyl) => matchesVinylSearch(vinyl, query));
+  }
+
+  if (tags?.length) {
+    filteredVinyls = filterVinylsByTags(filteredVinyls, tags);
   }
 
   if (sort) {

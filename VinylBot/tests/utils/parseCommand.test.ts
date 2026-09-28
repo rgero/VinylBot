@@ -139,25 +139,61 @@ it('should convert em-dashes (—) into standard flag double dashes (--)', async
 
   it('should return an error when a value-flag argument is another flag', async () => {
     vi.mocked(userMapService.resolveUserMap).mockResolvedValue(new Map());
-    const message = createMockMessage("!stats --count --dir asc");
+    const message = createMockMessage("!stats --limit --dir asc");
     
     const result = await parseCommand(message);
     
     expect(result).toEqual({
       ok: false,
-      error: 'The flag `--count` requires an argument (e.g., `--count value`).',
+      error: 'The flag `--limit` requires an argument (e.g., `--limit value`).',
     });
   });
 
   it('should return an error when a value-flag argument is a discord mention', async () => {
     vi.mocked(userMapService.resolveUserMap).mockResolvedValue(new Map());
-    const message = createMockMessage("!stats --count <@123>");
+    const message = createMockMessage("!stats --limit <@123>");
     
     const result = await parseCommand(message);
     
     expect(result).toEqual({
       ok: false,
-      error: 'The flag `--count` requires an argument (e.g., `--count value`).',
+      error: 'The flag `--limit` requires an argument (e.g., `--limit value`).',
+    });
+  });
+
+  it('should treat --count without a value as a boolean flag', async () => {
+    vi.mocked(userMapService.resolveUserMap).mockResolvedValue(new Map());
+    const message = createMockMessage("!unplayed --count");
+
+    const result = await parseCommand(message);
+
+    expect(result).toEqual({
+      ok: true,
+      context: { mentions: [], flags: { count: true }, query: "" },
+    });
+  });
+
+  it('should not consume a following flag or text as the --count value', async () => {
+    vi.mocked(userMapService.resolveUserMap).mockResolvedValue(new Map());
+    const message = createMockMessage("!playlogs --count --all Radiohead");
+
+    const result = await parseCommand(message);
+
+    expect(result).toEqual({
+      ok: true,
+      context: { mentions: [], flags: { count: true, all: true }, query: "Radiohead" },
+    });
+  });
+
+  it('should take a numeric value for --count when provided', async () => {
+    vi.mocked(userMapService.resolveUserMap).mockResolvedValue(new Map());
+    const message = createMockMessage("!stats --count 5 --dir asc");
+
+    const result = await parseCommand(message);
+
+    expect(result).toEqual({
+      ok: true,
+      context: { mentions: [], flags: { count: '5', dir: 'asc' }, query: "" },
     });
   });
 
