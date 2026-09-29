@@ -29,8 +29,8 @@ describe('ProcessRandomCommand', () => {
     expect(message.reply).toHaveBeenCalledWith('❌ Invalid command');
   });
 
-  it('routes --low to ProcessRandomLowAlbum', async () => {
-    const context = { flags: { low: true }, mentions: [], query: '' } as any;
+  it('routes --low --mine to ProcessRandomLowAlbum', async () => {
+    const context = { flags: { low: true, mine: true }, mentions: [], query: '' } as any;
     vi.mocked(parseCommand).mockResolvedValue({ ok: true, context } as any);
 
     const message = createMessage();
@@ -73,6 +73,16 @@ describe('ProcessRandomCommand', () => {
 
   it('defaults to ProcessRandomAlbum when no primary flags are set', async () => {
     const context = { flags: {}, mentions: [], query: '' } as any;
+    vi.mocked(parseCommand).mockResolvedValue({ ok: true, context } as any);
+
+    const message = createMessage();
+    await ProcessRandomCommand(message);
+
+    expect(vi.mocked(ProcessRandomAlbum)).toHaveBeenCalledWith(message, context);
+  });
+
+  it('routes --mine to ProcessRandomAlbum', async () => {
+    const context = { flags: { mine: true }, mentions: [], query: '' } as any;
     vi.mocked(parseCommand).mockResolvedValue({ ok: true, context } as any);
 
     const message = createMessage();

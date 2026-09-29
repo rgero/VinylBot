@@ -53,6 +53,7 @@ export const ProcessHelp = async (message: Message) => {
             "`!random`: Chooses a random vinyl.\n" +
             "`!random {person}`: Chooses a random vinyl liked by that person.\n" +
             "`!random {term}`: Chooses a random vinyl based on that term.\n" +
+            "`!random --mine`: Chooses a random vinyl you own; supports tags and a search term.\n" +
             "`!random --low`: Chooses a random low-play vinyl; includes unplayed albums but uses the lowest positive play count to define the low-play pool.\n" +
             "`!random --store`: Chooses a random store.\n" +
             "`!random --tags {tags}`: Chooses a random vinyl matching any of the tags (combines with a person or term).\n" +
@@ -100,7 +101,7 @@ export const ProcessHelp = async (message: Message) => {
           name: "Random",
           value:
             "`!random --low --limit {n}`: Low-play pool is albums with at most `n` plays.\n" +
-            "`!random --low --mine`: Uses your own play counts (can't be combined with a mention)."
+            "`!random --low --mine`: Chooses from albums you own using your own play counts (can't be combined with a mention)."
         },
         {
           name: "Playlogs",

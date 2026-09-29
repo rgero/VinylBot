@@ -1,6 +1,6 @@
 import { attachRandomAlbumCollector, buildAlbumEmbed, buildAlbumRow, getRandomItem } from "./utils/randomAlbumUtils.js";
 import { getUserById, getUserByName } from "../../services/users.api.js";
-import { getVinyls, getVinylsByQuery, getVinylsLikedByUserID } from "../../services/vinyls.api.js";
+import { getVinyls, getVinylsByQuery, getVinylsBySearchQuery, getVinylsLikedByUserID } from "../../services/vinyls.api.js";
 import { filterVinylsByTags, parseTagsFlag } from "../../utils/tagFilters.js";
 
 import { CommandContext } from "../../utils/parseCommand.js";
@@ -36,6 +36,16 @@ export const ProcessRandomLowAlbum = async (message: Message, context: CommandCo
       if (mentionedUser) {
         vinyls = await getVinylsLikedByUserID(mentions[0]);
       }
+    } else if (flags.mine) {
+      if (!targetUser) {
+        return await message.reply("❌ No matching user profile found for logging.");
+      }
+
+      vinyls = await getVinylsBySearchQuery({
+        owners: [targetUser.id],
+        search: query ? query.toLowerCase() : undefined,
+      });
+      titleSuffix = query ? `matching "${query}"` : "(All Time)";
     } else if (query) {
       vinyls = await getVinylsByQuery({ type: "search", term: query });
       titleSuffix = `matching "${query}"`;

@@ -1,7 +1,7 @@
 import { ComponentType, Message } from "discord.js";
 import { attachRandomAlbumCollector, buildAlbumEmbed, buildAlbumRow, getRandomItem } from "./utils/randomAlbumUtils.js";
 import { getUserById, getUserByName } from "../../services/users.api.js";
-import { getVinyls, getVinylsByQuery, getVinylsLikedByUserID } from "../../services/vinyls.api.js";
+import { getVinyls, getVinylsByQuery, getVinylsBySearchQuery, getVinylsLikedByUserID } from "../../services/vinyls.api.js";
 import { filterVinylsByTags, parseTagsFlag } from "../../utils/tagFilters.js";
 
 import { CommandContext } from "../../utils/parseCommand.js";
@@ -25,6 +25,11 @@ export const ProcessRandomAlbum = async (message: Message, context: CommandConte
       return;
     }
 
+    if (flags.mine && mentions.length === 1) {
+      await message.reply("❌ Invalid usage. Use either --mine or mention a user, not both.");
+      return;
+    }
+
     targetUser = await getUserByName(getDropdownValue(message.author.username, message.author.id));
     if (mentions.length === 1) {
       targetUser = await getUserById(mentions[0]); 
@@ -32,6 +37,16 @@ export const ProcessRandomAlbum = async (message: Message, context: CommandConte
       if (targetUser) {
         vinyls = await getVinylsLikedByUserID(mentions[0]);
       }
+    } else if (flags.mine) {
+      if (!targetUser) {
+        return message.reply("❌ No matching user profile found for logging.");
+      }
+
+      vinyls = await getVinylsBySearchQuery({
+        owners: [targetUser.id],
+        search: query ? query.toLowerCase() : undefined,
+      });
+      titleSuffix = query ? `matching "${query}"` : "(mine)";
     } else if (query) {
       vinyls = await getVinylsByQuery({ type: "search", term: query });
     } else {

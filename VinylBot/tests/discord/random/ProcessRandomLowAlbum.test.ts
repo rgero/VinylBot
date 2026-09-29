@@ -3,7 +3,7 @@ import { getUserById, getUserByName } from '../../../src/services/users.api';
 
 import { ProcessRandomLowAlbum } from '../../../src/discord/random/ProcessRandomLowAlbum';
 import { getPlaylogsByUserIDs } from '../../../src/services/plays.api';
-import { getVinyls, getVinylsByQuery, getVinylsLikedByUserID } from '../../../src/services/vinyls.api';
+import { getVinyls, getVinylsByQuery, getVinylsBySearchQuery, getVinylsLikedByUserID } from '../../../src/services/vinyls.api';
 
 vi.mock('../../../src/services/users.api');
 vi.mock('../../../src/services/vinyls.api');
@@ -97,7 +97,7 @@ describe('ProcessRandomLowAlbum', () => {
   it('applies tags before computing --mine play counts', async () => {
     const context = { mentions: [], flags: { mine: true, tags: 'emo' }, query: '' } as any;
     vi.mocked(getUserByName).mockResolvedValue({ id: '1', name: 'testuser' } as any);
-    vi.mocked(getVinyls).mockResolvedValue([
+    vi.mocked(getVinylsBySearchQuery).mockResolvedValue([
       { id: 'v1', artist: 'A', album: 'One', tags: ['emo'] },
       { id: 'v2', artist: 'B', album: 'Two', tags: ['jazz'] },
       { id: 'v3', artist: 'C', album: 'Three', tags: ['emo'] },
@@ -149,7 +149,7 @@ describe('ProcessRandomLowAlbum', () => {
   it('filters by user playlogs when --mine is present', async () => {
     const context = { mentions: [], flags: { mine: true }, query: '' } as any;
     vi.mocked(getUserByName).mockResolvedValue({ id: '1', name: 'testuser' } as any);
-    vi.mocked(getVinyls).mockResolvedValue([
+    vi.mocked(getVinylsBySearchQuery).mockResolvedValue([
       { id: 'v1', artist: 'A', album: 'One', playCount: 5 },
       { id: 'v2', artist: 'B', album: 'Two', playCount: 0 },
       { id: 'v3', artist: 'C', album: 'Three', playCount: 1 },
@@ -163,9 +163,37 @@ describe('ProcessRandomLowAlbum', () => {
     const message = createMessage();
     await ProcessRandomLowAlbum(message, context);
 
+    expect(getVinylsBySearchQuery).toHaveBeenCalledWith({ owners: ['1'], search: undefined });
     expect(getPlaylogsByUserIDs).toHaveBeenCalledWith(['1']);
     expect(message.reply).toHaveBeenCalledWith(expect.objectContaining({
       embeds: [expect.objectContaining({ title: expect.stringContaining('🎲 Random Low-Play Pick') })],
+    }));
+  });
+
+  it('combines owned albums, search, and personal play counts with --mine', async () => {
+    const context = { mentions: [], flags: { mine: true, limit: '2' }, query: 'Alpha' } as any;
+    vi.mocked(getUserByName).mockResolvedValue({ id: '1', name: 'testuser' } as any);
+    vi.mocked(getVinylsBySearchQuery).mockResolvedValue([
+      { id: 'v1', artist: 'Artist A', album: 'One', playCount: 0, owners: ['1'] },
+      { id: 'v2', artist: 'Artist B', album: 'Two', playCount: 50, owners: ['1'] },
+    ] as any);
+    vi.mocked(getPlaylogsByUserIDs).mockResolvedValue([
+      ...Array(3).fill({ album_id: 'v1' }),
+      { album_id: 'v2' },
+    ] as any);
+
+    const message = createMessage();
+    await ProcessRandomLowAlbum(message, context);
+
+    expect(getVinylsBySearchQuery).toHaveBeenCalledWith({ owners: ['1'], search: 'alpha' });
+    expect(getPlaylogsByUserIDs).toHaveBeenCalledWith(['1']);
+    expect(message.reply).toHaveBeenCalledWith(expect.objectContaining({
+      embeds: [expect.objectContaining({
+        title: expect.stringContaining('matching "Alpha" <= 2 plays (mine)'),
+        fields: expect.arrayContaining([
+          expect.objectContaining({ name: 'Artist B', value: 'Two' }),
+        ]),
+      })],
     }));
   });
 

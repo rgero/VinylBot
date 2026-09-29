@@ -3,7 +3,7 @@ import { getUserById, getUserByName } from '../../../src/services/users.api'
 
 import { ProcessRandomAlbum } from '../../../src/discord/random/ProcessRandomAlbum';
 import { Vinyl } from '../../../src/interfaces/Vinyl';
-import { getVinyls, getVinylsByQuery, getVinylsLikedByUserID } from '../../../src/services/vinyls.api';
+import { getVinyls, getVinylsByQuery, getVinylsBySearchQuery, getVinylsLikedByUserID } from '../../../src/services/vinyls.api';
 import { parseCommand } from '../../../src/utils/parseCommand';
 
 vi.mock('../../../src/utils/parseCommand');
@@ -38,7 +38,7 @@ describe('ProcessRandomAlbum', () => {
   it('should notify if no user profile is found via mention', async () => {
     const context = { 
       mentions: ['unknown-uuid' as any], 
-      flags: [], 
+      flags: {}, 
       query: '' 
     }
 
@@ -54,7 +54,7 @@ describe('ProcessRandomAlbum', () => {
   it('should notify if the collection is empty', async () => {
     const context = { 
       mentions: [], 
-      flags: [], 
+      flags: {}, 
       query: '' 
     }
     vi.mocked(getUserByName).mockResolvedValue({ id: '1', name: 'testuser' } as any);
@@ -71,7 +71,7 @@ describe('ProcessRandomAlbum', () => {
     const mockVinyls = [{ id: 'v1', artist: 'Artist A', album: 'Album A' }] as unknown as Vinyl[];
     const context = { 
       mentions: [], 
-      flags: [], 
+      flags: {}, 
       query: '' 
     }
     vi.mocked(getUserByName).mockResolvedValue({ id: '1', name: 'testuser' } as any);
@@ -85,6 +85,42 @@ describe('ProcessRandomAlbum', () => {
     }));
 
     expect(mockCollector.on).toHaveBeenCalledWith('collect', expect.any(Function));
+  });
+
+  it('should choose from the caller\'s owned albums with --mine', async () => {
+    const context = { mentions: [], flags: { mine: true }, query: '' };
+    vi.mocked(getUserByName).mockResolvedValue({ id: '1', name: 'testuser' } as any);
+    vi.mocked(getVinylsBySearchQuery).mockResolvedValue([
+      { id: 'v1', artist: 'Artist A', album: 'Album A', owners: ['1'] },
+    ] as any);
+
+    await ProcessRandomAlbum(mockMessage, context);
+
+    expect(getVinylsBySearchQuery).toHaveBeenCalledWith({ owners: ['1'], search: undefined });
+    expect(mockMessage.reply).toHaveBeenCalledWith(expect.objectContaining({
+      embeds: [expect.objectContaining({ title: '🎲 Random Pick (mine)' })],
+    }));
+  });
+
+  it('should combine --mine with a search term', async () => {
+    const context = { mentions: [], flags: { mine: true }, query: 'ALPHA' };
+    vi.mocked(getUserByName).mockResolvedValue({ id: '1', name: 'testuser' } as any);
+    vi.mocked(getVinylsBySearchQuery).mockResolvedValue([
+      { id: 'v1', artist: 'Alpha', album: 'Album A', owners: ['1'] },
+    ] as any);
+
+    await ProcessRandomAlbum(mockMessage, context);
+
+    expect(getVinylsBySearchQuery).toHaveBeenCalledWith({ owners: ['1'], search: 'alpha' });
+  });
+
+  it('should reject --mine with a mention', async () => {
+    const context = { mentions: ['uuid-2' as any], flags: { mine: true }, query: '' };
+
+    await ProcessRandomAlbum(mockMessage, context);
+
+    expect(mockMessage.reply).toHaveBeenCalledWith('❌ Invalid usage. Use either --mine or mention a user, not both.');
+    expect(getVinylsBySearchQuery).not.toHaveBeenCalled();
   });
 
   it('should filter a mentioned user\'s likes by tags', async () => {
@@ -145,7 +181,7 @@ describe('ProcessRandomAlbum', () => {
     const mockVinyls = [{ id: 'v1', artist: 'Artist A', album: 'Album A' }] as unknown as Vinyl[];
     const context = { 
       mentions: [], 
-      flags: [], 
+      flags: {}, 
       query: '' 
     }
     vi.mocked(getUserByName).mockResolvedValue({ id: '1', name: 'testuser' } as any);

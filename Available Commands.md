@@ -11,6 +11,7 @@ Tags are comma-separated with no spaces (e.g. `--tags emo,punk`) and match album
 
 ### Random
 - `!random` - Chooses a random vinyl
+- `!random --mine` - Chooses a random vinyl you own. Supports `--tags` and a search term.
 - `!random {person}` - Chooses a random vinyl liked by that person
 - `!random {term}` - Chooses a random vinyl matching that term
 - `!random --tags {tags}` - Chooses a random vinyl matching any of the tags. Combines with a person or term.
@@ -20,7 +21,7 @@ Tags are comma-separated with no spaces (e.g. `--tags emo,punk`) and match album
   - Supports `--tags` and a search term
 - `!random --low` - Chooses a random low-play vinyl. Includes unplayed albums but uses the lowest positive play count to define the pool.
   - `--limit {n}` - Pool is albums with at most `n` plays
-  - `--mine` - Uses your own play counts (can't be combined with a mention)
+  - `--mine` - Only considers albums you own and uses your own play counts (can't be combined with a mention)
   - Supports `--tags`, a person, or a search term
 
 Only one of `--low`, `--store`, `--unplayed` can be used at a time.
