@@ -124,6 +124,37 @@ export const getPlaylogsByUserIDs = async (userIDs: UUID[], limit: number = 0): 
   }));
 };
 
+export const getLastPlayedDates = async (userIDs?: UUID[]): Promise<Map<number, Date>> => {
+  let query = supabase.from("playlogs").select("album_id, date");
+
+  if (userIDs?.length) {
+    query = query.contains("listeners", userIDs);
+  }
+
+  const { data, error } = await query;
+
+  if (error) {
+    console.error("Error fetching last played dates:", error);
+    return new Map();
+  }
+
+  const lastPlayed = new Map<number, Date>();
+
+  for (const row of data ?? []) {
+    if (!row.date) continue;
+
+    const played = new Date(row.date);
+    if (Number.isNaN(played.getTime())) continue;
+
+    const current = lastPlayed.get(row.album_id);
+    if (!current || played > current) {
+      lastPlayed.set(row.album_id, played);
+    }
+  }
+
+  return lastPlayed;
+};
+
 export const addPlayLog = async (newPlayLog: PlayLog) => {
   const { error } = await supabase.from("playlogs").insert([
     {

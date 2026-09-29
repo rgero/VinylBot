@@ -40,6 +40,14 @@ Used to record when we play the vinyl
 - `!playlog {id}` - Gives you the details of that playlog entry
 - `!playlog --number {n}` - Looks up the playlog by its position in the list instead of its ID
 
+### Stale
+Lists albums by how long they've gone without a play, longest first. Albums that were never played are listed first.
+- `!stale` - Uses everyone's plays
+- `!stale --mine` - Only counts plays where you were a listener
+- `!stale {person}` - Only counts plays where that person was a listener
+- `!stale {search term}` - Filters by artist or album
+- `!stale --tags {tags}` - Only albums matching any of the tags
+
 ### Want list
 - `!wantlist` - Gives you the whole want list
 - `!wantlist {person}` - Gives you the want list of that person

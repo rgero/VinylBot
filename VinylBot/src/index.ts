@@ -12,6 +12,7 @@ import { ProcessPlay } from "./discord/ProcessPlay.js";
 import { ProcessPlaylog } from "./discord/ProcessPlaylog.js";
 import { ProcessPlaylogs } from "./discord/ProcessPlaylogs.js";
 import { ProcessRandomCommand } from "./discord/random/ProcessRandomCommand.js";
+import { ProcessStale } from "./discord/ProcessStale.js";
 import { ProcessStatsCommand } from "./discord/stats/ProcessStatsCommand.js";
 import { ProcessUnplayed } from "./discord/ProcessUnplayed.js";
 import { ProcessWant } from "./discord/ProcessWant.js";
@@ -86,6 +87,9 @@ client.on("messageCreate", async (message: Message) => {
 
       case "random":
         return await ProcessRandomCommand(message);
+
+      case "stale":
+        return await ProcessStale(message);
 
       case "stats":
         return await ProcessStatsCommand(message);

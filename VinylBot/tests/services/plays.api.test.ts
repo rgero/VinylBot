@@ -12,6 +12,7 @@ vi.mock('../../src/services/supabase.js', () => ({
 
 import {
   addPlayLog,
+  getLastPlayedDates,
   getPlayLogByID,
   getPlayLogs,
   getPlaylogByIndex,
@@ -165,6 +166,47 @@ describe('plays.api', () => {
     const result = await getPlayLogByID(1);
 
     expect(result).toBeNull();
+    expect(consoleSpy).toHaveBeenCalled();
+    consoleSpy.mockRestore();
+  });
+
+  it('getLastPlayedDates keeps the most recent date per album and skips invalid dates', async () => {
+    const builder = makeAwaitableBuilder({
+      data: [
+        { album_id: 1, date: '2020-01-01T00:00:00Z' },
+        { album_id: 1, date: '2024-06-01T00:00:00Z' },
+        { album_id: 2, date: null },
+        { album_id: 3, date: 'not-a-date' },
+      ],
+      error: null,
+    });
+    fromMock.mockReturnValue(builder);
+
+    const result = await getLastPlayedDates();
+
+    expect(builder.contains).not.toHaveBeenCalled();
+    expect(result.get(1)).toEqual(new Date('2024-06-01T00:00:00Z'));
+    expect(result.has(2)).toBe(false);
+    expect(result.has(3)).toBe(false);
+  });
+
+  it('getLastPlayedDates filters by listeners when user IDs are given', async () => {
+    const builder = makeAwaitableBuilder({ data: [], error: null });
+    fromMock.mockReturnValue(builder);
+
+    await getLastPlayedDates(['u1'] as any);
+
+    expect(builder.contains).toHaveBeenCalledWith('listeners', ['u1']);
+  });
+
+  it('getLastPlayedDates returns an empty map on query error', async () => {
+    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const builder = makeAwaitableBuilder({ data: null, error: new Error('db') });
+    fromMock.mockReturnValue(builder);
+
+    const result = await getLastPlayedDates();
+
+    expect(result.size).toBe(0);
     expect(consoleSpy).toHaveBeenCalled();
     consoleSpy.mockRestore();
   });

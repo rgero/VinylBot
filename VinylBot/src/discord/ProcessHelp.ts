@@ -72,6 +72,7 @@ export const ProcessHelp = async (message: Message) => {
             "`!stats --plays {user|artist}`: Returns top albums by play count.\n" +
             "`!stats --locations`: Returns locations sorted by album count.\n" +
             "`!stats --low`: Returns lowest-played albums.\n" +
+            "`!stale`: Albums sorted by how long they've gone unplayed, longest first.\n" +
             "`!tag {array of tags}`: Lists albums matching any of the specified tags.\n" +
             "`!unplayed`: Returns a list of unplayed albums in your collection.\n" +
             "`!unplayed --tags {tags}`: Unplayed albums matching any of the tags."
@@ -110,6 +111,14 @@ export const ProcessHelp = async (message: Message) => {
             "`!playlogs --all`: Everyone's playlogs.\n" +
             "`!playlogs --count`: Total number of plays.\n" +
             "`!playlog --number {n}`: Playlog by its position in the list instead of its ID."
+        },
+        {
+          name: "Stale",
+          value:
+            "`!stale {person}` / `!stale --mine`: Only counts plays where that person was a listener.\n" +
+            "`!stale {search term}`: Filters by artist or album.\n" +
+            "`!stale --tags {tags}`: Only albums matching any of the tags.\n" +
+            "*Albums never played are listed first.*"
         },
         {
           name: "Stats",
