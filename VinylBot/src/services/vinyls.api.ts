@@ -7,15 +7,58 @@ import { filterVinylsByTags } from "../utils/tagFilters.js";
 import { sortItems } from "../utils/sortItems.js";
 import supabase from "./supabase.js";
 
-type VinylRow = Vinyl & {
+type VinylRow = Omit<Vinyl, 'purchaseNumber' | 'purchaseDate' | 'purchasedBy' | 'likedBy' | 'imageUrl' | 'doubleLP' | 'playCount'> & {
+  purchase_number?: number;
+  purchase_date: string;
+  purchased_by?: string[];
+  liked_by?: string[];
+  image_url: string;
+  double_lp: boolean;
+  play_count?: number;
+  purchase_location?: string | number | null;
   playlogs?: { count?: number }[];
 };
 
 const VINYL_SELECT = "*, playlogs(count)";
 const VINYL_WITH_LOCATION_SELECT = `${VINYL_SELECT}, purchaseLocation:locations (name)`;
 
+const toVinyl = (row: VinylRow): Vinyl => {
+  const {
+    purchase_number, purchase_date, purchased_by, liked_by, image_url,
+    double_lp, play_count, purchase_location, playlogs, ...vinyl
+  } = row;
+
+  return {
+    ...vinyl,
+    purchaseDate: purchase_date,
+    imageUrl: image_url,
+    doubleLP: double_lp,
+    ...('purchase_number' in row ? { purchaseNumber: purchase_number } : {}),
+    ...('purchased_by' in row ? { purchasedBy: purchased_by } : {}),
+    ...('liked_by' in row ? { likedBy: liked_by } : {}),
+    ...('play_count' in row ? { playCount: play_count } : {}),
+  };
+};
+
+const toVinylInsert = (vinyl: Omit<Vinyl, 'id'>) => ({
+  artist: vinyl.artist,
+  album: vinyl.album,
+  owners: vinyl.owners,
+  purchase_date: vinyl.purchaseDate,
+  image_url: vinyl.imageUrl,
+  double_lp: vinyl.doubleLP,
+  ...(vinyl.purchaseNumber !== undefined ? { purchase_number: vinyl.purchaseNumber } : {}),
+  ...(vinyl.purchasedBy !== undefined ? { purchased_by: vinyl.purchasedBy } : {}),
+  ...(vinyl.likedBy !== undefined ? { liked_by: vinyl.likedBy } : {}),
+  ...(vinyl.color !== undefined ? { color: vinyl.color } : {}),
+  ...(vinyl.price !== undefined ? { price: vinyl.price } : {}),
+  ...(vinyl.length !== undefined ? { length: vinyl.length } : {}),
+  ...(vinyl.notes !== undefined ? { notes: vinyl.notes } : {}),
+  ...(vinyl.tags !== undefined ? { tags: vinyl.tags } : {}),
+});
+
 const hydrateVinyls = (rows: VinylRow[]): Vinyl[] => rows.map(({ playlogs, ...vinyl }) => ({
-  ...vinyl,
+  ...toVinyl(vinyl),
   playCount: playlogs?.[0]?.count ?? 0,
 }));
 
@@ -81,7 +124,7 @@ export const getVinylsLikedByUserID = async (userId: string): Promise<Vinyl[]> =
   const { data, error } = await supabase
     .from("vinyls")
     .select(VINYL_SELECT)
-    .contains("likedBy", [userId]);
+    .contains("liked_by", [userId]);
 
   if (error) throw error;
   return hydrateVinyls((data ?? []) as VinylRow[]);
@@ -139,7 +182,7 @@ export const getVinylsByTags = async (tags: string[]): Promise<Vinyl[]> => {
 export const addVinyl = async (newVinyl: Omit<Vinyl, 'id'>): Promise<AddStatus> => {
   const { error } = await supabase
     .from("vinyls")
-    .insert({ ...newVinyl })
+    .insert(toVinylInsert(newVinyl))
     .select("*")
     .single();
 
@@ -201,7 +244,7 @@ export const getUnplayedVinyls = async (userId: string, query?: string, sort?: s
     return [];
   }
 
-  let filteredVinyls: Vinyl[] = data ?? [];
+  let filteredVinyls = ((data ?? []) as VinylRow[]).map(toVinyl);
 
   if (query) {
     filteredVinyls = filteredVinyls.filter((vinyl) => matchesVinylSearch(vinyl, query));

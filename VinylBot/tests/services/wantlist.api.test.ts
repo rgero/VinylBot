@@ -18,6 +18,28 @@ describe('wantlist.api', () => {
     vi.clearAllMocks();
   });
 
+  it('maps snake_case artwork without exposing the raw key', async () => {
+    const selectMock = vi.fn().mockResolvedValue({
+      data: [{ artist: 'A', album: 'B', image_url: null, searcher: [] }], error: null,
+    });
+    fromMock.mockReturnValue({ select: selectMock });
+
+    expect(await getWantList({ type: 'none', term: '' })).toEqual([
+      { artist: 'A', album: 'B', imageUrl: null, searcher: [] },
+    ]);
+  });
+
+  it('inserts snake_case artwork while preserving empty metadata', async () => {
+    const insertMock = vi.fn().mockResolvedValue({ error: null });
+    fromMock.mockReturnValue({ insert: insertMock });
+
+    await addWantedItem({ artist: 'A', album: 'B', imageUrl: '', searcher: [], notes: '', length: 0 });
+
+    expect(insertMock).toHaveBeenCalledWith([
+      { artist: 'A', album: 'B', image_url: '', searcher: [], notes: '', length: 0 },
+    ]);
+  });
+
   it('getWantList uses contains for user queries', async () => {
     const containsMock = vi.fn().mockResolvedValue({ data: [{ artist: 'A', album: 'B' }], error: null });
     const selectMock = vi.fn().mockReturnValue({ contains: containsMock });

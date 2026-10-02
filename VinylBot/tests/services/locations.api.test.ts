@@ -23,12 +23,12 @@ describe('locations.api', () => {
   });
 
   it('getLocations returns data', async () => {
-    const selectMock = vi.fn().mockResolvedValue({ data: [{ name: 'Store A' }], error: null });
+    const selectMock = vi.fn().mockResolvedValue({ data: [{ name: 'Store A', purchase_count: 0 }], error: null });
     fromMock.mockReturnValue({ select: selectMock });
 
     const result = await getLocations();
 
-    expect(result).toEqual([{ name: 'Store A' }]);
+    expect(result).toEqual([{ name: 'Store A', purchaseCount: 0 }]);
   });
 
   it('getLocations logs and returns empty array on error', async () => {
@@ -44,7 +44,7 @@ describe('locations.api', () => {
   });
 
   it('getPhysicalLocations applies address filters and returns data', async () => {
-    const neqMock = vi.fn().mockResolvedValue({ data: [{ name: 'Store B' }], error: null });
+    const neqMock = vi.fn().mockResolvedValue({ data: [{ name: 'Store B', purchase_count: 2 }], error: null });
     const notMock = vi.fn().mockReturnValue({ neq: neqMock });
     const selectMock = vi.fn().mockReturnValue({ not: notMock });
     fromMock.mockReturnValue({ select: selectMock });
@@ -54,7 +54,7 @@ describe('locations.api', () => {
     expect(fromMock).toHaveBeenCalledWith('locations');
     expect(notMock).toHaveBeenCalledWith('address', 'is', null);
     expect(neqMock).toHaveBeenCalledWith('address', '');
-    expect(result).toEqual([{ name: 'Store B' }]);
+    expect(result).toEqual([{ name: 'Store B', purchaseCount: 2 }]);
   });
 
   it('getPhysicalLocations returns empty array on error', async () => {
@@ -114,8 +114,8 @@ describe('locations.api', () => {
   it('getLocationsByPurchaseCount maps ordered locations', async () => {
     const orderMock = vi.fn().mockResolvedValue({
       data: [
-        { name: 'Store A', purchaseCount: 4 },
-        { name: 'Store B', purchaseCount: 2 },
+        { name: 'Store A', purchase_count: 4 },
+        { name: 'Store B', purchase_count: 2 },
       ],
       error: null,
     });
@@ -124,7 +124,7 @@ describe('locations.api', () => {
 
     const result = await getLocationsByPurchaseCount();
 
-    expect(orderMock).toHaveBeenCalledWith('purchaseCount', { ascending: false });
+    expect(orderMock).toHaveBeenCalledWith('purchase_count', { ascending: false });
     expect(result).toEqual([
       { title: 'Store A', count: 4 },
       { title: 'Store B', count: 2 },

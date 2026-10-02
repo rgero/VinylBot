@@ -87,7 +87,7 @@ describe('plays.api', () => {
 
   it('getPlaylogByIndex returns mapped record', async () => {
     const builder = makeAwaitableBuilder({
-      data: [{ id: 1, vinyls: { artist: 'A', album: 'B', imageUrl: 'img' } }],
+      data: [{ id: 1, vinyls: { artist: 'A', album: 'B', image_url: 'img' } }],
       error: null,
     });
     fromMock.mockReturnValue(builder);
@@ -95,6 +95,7 @@ describe('plays.api', () => {
     const result = await getPlaylogByIndex(1);
 
     expect(builder.range).toHaveBeenCalledWith(0, 0);
+    expect(builder.select).toHaveBeenCalledWith('*, vinyls(artist, album, image_url)');
     expect(result).toMatchObject({ artist: 'A', album: 'B', imageUrl: 'img' });
   });
 
@@ -121,7 +122,7 @@ describe('plays.api', () => {
 
   it('getPlayLogByID returns mapped playlog on success', async () => {
     const builder = makeAwaitableBuilder({
-      data: { id: 1, vinyls: { artist: 'A', album: 'B', imageUrl: 'img' } },
+      data: { id: 1, vinyls: { artist: 'A', album: 'B', image_url: 'img' } },
       error: null,
     });
     fromMock.mockReturnValue(builder);
@@ -129,6 +130,7 @@ describe('plays.api', () => {
     const result = await getPlayLogByID(1);
 
     expect(builder.eq).toHaveBeenCalledWith('id', 1);
+    expect(builder.select).toHaveBeenCalledWith('*, vinyls(artist, album, image_url)');
     expect(result).toMatchObject({ artist: 'A', album: 'B', imageUrl: 'img' });
   });
 

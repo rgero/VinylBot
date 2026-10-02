@@ -59,6 +59,52 @@ describe('vinyls.api', () => {
     vi.clearAllMocks();
   });
 
+  it('maps database metadata while preserving the location alias and computed count', async () => {
+    const builder = makeAwaitableBuilder({ data: [{
+      artist: 'A', album: 'B', owners: [], purchase_date: '2026-10-02',
+      image_url: null, double_lp: false, purchase_number: 0, purchased_by: [],
+      liked_by: [], play_count: 99, purchase_location: 12,
+      purchaseLocation: { name: 'Store' }, playlogs: [{ count: 3 }],
+    }], error: null });
+    fromMock.mockReturnValue(builder);
+
+    expect(await getFullVinylsByQuery('A')).toEqual([{
+      artist: 'A', album: 'B', owners: [], purchaseDate: '2026-10-02',
+      imageUrl: null, doubleLP: false, purchaseNumber: 0, purchasedBy: [],
+      likedBy: [], playCount: 3, purchaseLocation: { name: 'Store' },
+    }]);
+    expect(builder.select).toHaveBeenCalledWith('*, playlogs(count), purchaseLocation:locations (name)');
+  });
+
+  it('inserts snake_case metadata without computed or enriched fields', async () => {
+    const builder = makeAwaitableBuilder({ data: { id: 1 }, error: null });
+    fromMock.mockReturnValue(builder);
+
+    await addVinyl({
+      artist: 'A', album: 'B', owners: [], purchaseDate: '2026-10-02',
+      imageUrl: 'img', doubleLP: false, purchaseNumber: 0, purchasedBy: [],
+      likedBy: [], price: 0, length: 0, notes: '', tags: [],
+      playCount: 99, purchaseLocation: { name: 'Store' },
+    } as any);
+
+    expect(builder.insert).toHaveBeenCalledWith({
+      artist: 'A', album: 'B', owners: [], purchase_date: '2026-10-02',
+      image_url: 'img', double_lp: false, purchase_number: 0, purchased_by: [],
+      liked_by: [], price: 0, length: 0, notes: '', tags: [],
+    });
+  });
+
+  it('maps unplayed RPC rows without overwriting their returned play count', async () => {
+    rpcMock.mockResolvedValue({ data: [{
+      artist: 'A', album: 'B', image_url: 'img', double_lp: false, play_count: 2,
+    }], error: null });
+
+    expect(await getUnplayedVinyls('u1')).toEqual([{
+      artist: 'A', album: 'B', imageUrl: 'img', doubleLP: false, playCount: 2,
+    }]);
+    expect(rpcMock).toHaveBeenCalledWith('get_unplayed_vinyls', { target_user_id: 'u1' });
+  });
+
   it('getVinylsBySearchQuery applies owners, search, and tags filters', async () => {
     const builder = makeAwaitableBuilder({ data: [{ artist: 'A', album: 'B' }], error: null });
     fromMock.mockReturnValue(builder);
@@ -208,7 +254,7 @@ describe('vinyls.api', () => {
   });
 
   it('getVinyls calculates playCount from playlogs', async () => {
-    const builder = makeAwaitableBuilder({ data: [{ artist: 'A', album: 'B', playCount: 99, playlogs: [{ count: 3 }] }], error: null });
+    const builder = makeAwaitableBuilder({ data: [{ artist: 'A', album: 'B', play_count: 99, playlogs: [{ count: 3 }] }], error: null });
     fromMock.mockReturnValue(builder);
 
     const result = await getVinyls();
@@ -232,7 +278,7 @@ describe('vinyls.api', () => {
 
     const result = await getVinylsLikedByUserID('u1');
 
-    expect(builder.contains).toHaveBeenCalledWith('likedBy', ['u1']);
+    expect(builder.contains).toHaveBeenCalledWith('liked_by', ['u1']);
     expect(result).toEqual([{ artist: 'A', album: 'B', playCount: 0 }]);
   });
 
@@ -294,7 +340,7 @@ describe('vinyls.api', () => {
   it('getVinylsByPlayCount calculates and sorts by playlogs count', async () => {
     const builder = makeAwaitableBuilder({
       data: [
-        { artist: 'A', album: 'X', playCount: 99, playlogs: [{ count: 5 }] },
+        { artist: 'A', album: 'X', play_count: 99, playlogs: [{ count: 5 }] },
         { artist: 'B', album: 'Y', playlogs: [] },
       ],
       error: null,

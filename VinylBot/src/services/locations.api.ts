@@ -3,6 +3,13 @@ import { Location } from "../interfaces/Location.js";
 import { VinylWithLocation } from "../interfaces/Vinyl.js";
 import supabase from "./supabase.js";
 
+type LocationRow = Omit<Location, 'purchaseCount'> & { purchase_count: number };
+
+const toLocation = ({ purchase_count, ...location }: LocationRow): Location => ({
+  ...location,
+  purchaseCount: purchase_count,
+});
+
 export const getLocations = async (): Promise<Location[]> => {
   const { data, error } = await supabase.from('locations').select('*');
   if (error) {
@@ -10,7 +17,7 @@ export const getLocations = async (): Promise<Location[]> => {
     return [];
   }
 
-  return data ?? [];
+  return ((data ?? []) as LocationRow[]).map(toLocation);
 }
 
 export const getPhysicalLocations = async (): Promise<Location[]> => {
@@ -24,7 +31,7 @@ export const getPhysicalLocations = async (): Promise<Location[]> => {
     console.error(error);
     return [];
   }
-  return data ?? [];
+  return ((data ?? []) as LocationRow[]).map(toLocation);
 };
 
 const countVinylsByLocation = (vinyls: VinylWithLocation[]): ItemCount[] => {
@@ -54,11 +61,11 @@ export const getLocationsByPurchaseCountForID = async (userID: string): Promise<
 };
 
 export const getLocationsByPurchaseCount = async (): Promise<ItemCount[]> => {
-  const { data, error } = await supabase.from('locations').select('*').order('purchaseCount', { ascending: false });
+  const { data, error } = await supabase.from('locations').select('*').order('purchase_count', { ascending: false });
   if (error) throw error;
 
-  return (data ?? []).map((loc: any) => ({
+  return ((data ?? []) as LocationRow[]).map((loc) => ({
     title: loc.name,
-    count: loc.purchaseCount,
+    count: loc.purchase_count,
   }));
 };
