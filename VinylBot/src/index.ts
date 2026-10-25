@@ -4,6 +4,7 @@ import { Client, GatewayIntentBits, Message, Partials } from "discord.js";
 
 import { ProcessAdd } from "./discord/ProcessAdd.js";
 import { ProcessCheckExists } from "./discord/ProcessCheckExists.js";
+import { ProcessCost } from "./discord/ProcessCost.js";
 import { ProcessHave } from "./discord/ProcessHave.js";
 import { ProcessHelp } from "./discord/ProcessHelp.js";
 import { ProcessInfo } from "./discord/ProcessInfo.js";
@@ -63,6 +64,9 @@ client.on("messageCreate", async (message: Message) => {
     switch (command) {
       case "add":
         return await ProcessAdd(message);
+
+      case "cost":
+        return await ProcessCost(message);
 
       case "exists":
         return await ProcessCheckExists(message);
