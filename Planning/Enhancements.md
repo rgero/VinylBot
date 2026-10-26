@@ -6,6 +6,7 @@
 
 
 ## Reporting on the cost per play
+This is largely implemented. Just need to add the Cost Per Play.
 - This could be a simple command like `!cost`
 - It should have the following optional flags
   - `--house`
