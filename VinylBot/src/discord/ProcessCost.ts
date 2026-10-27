@@ -3,7 +3,7 @@ import { Vinyl } from "../interfaces/Vinyl.js";
 import { getDropdownValue } from "../utils/discordToDropdown.js";
 import { getNameById } from "../services/users.api.js";
 import { getVinyls } from "../services/vinyls.api.js";
-import { parseCommand } from "../utils/parseCommand";
+import { parseCommand } from "../utils/parseCommand.js";
 import { resolveUserMap } from "../utils/resolveUserMap.js";
 
 export const ProcessCost = async (message: Message) => {
