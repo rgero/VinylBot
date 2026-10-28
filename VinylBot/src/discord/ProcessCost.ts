@@ -59,7 +59,7 @@ export const ProcessCost = async (message: Message) => {
         targetId = requesterIds[0];
       }
       
-      ownershipTotal = vinyls.filter(v => v.owners.includes(targetId)).reduce((acc, v) => acc + (v.price ?? 0), 0);
+      ownershipTotal = vinyls.filter(v => v.owners.includes(targetId)).reduce((acc, v) => acc + ((v.price ?? 0) / (v.owners?.length ?? 1)), 0);
       spentTotal = vinyls.filter(v => {
         return v.purchasedBy?.includes(targetId);
       }).reduce((acc, v) => acc + ((v.price ?? 0) / (v.purchasedBy?.length ?? 1)), 0);
