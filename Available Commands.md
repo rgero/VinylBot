@@ -58,6 +58,13 @@ Lists albums by how long they've gone without a play, longest first. Albums that
 It's the same as Want List just with `!have`
 - `!have --tags {tags}` - Have list items matching any of the tags
 
+### Cost
+- `!cost` - Shows your collection value and total spent
+- `!cost {person}` - Shows that person's collection value and total spent
+- `!cost --household` - Shows the household collection value and total spent
+- `!cost --mine` - Shows your collection value and total spent
+Only one of a person mention, `--household`, or `--mine` can be used at a time.
+
 ### Tag
 - `!tag {tags}` - Lists albums matching any of the tags
 - Supports `--sort`

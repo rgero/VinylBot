@@ -19,6 +19,15 @@ export const ProcessHelp = async (message: Message) => {
             "`!have`: Gives you the whole have list.\n" +
             "`!have {person}`: Gives you the have list of that person.\n" +
             "`!have {search term}`: Gives you the have list items that match that term."
+        },
+        {
+          name: "Collection Cost",
+          value:
+            "`!cost`: Shows your collection value and total spent.\n" +
+            "`!cost {person}`: Shows that person's collection value and total spent.\n" +
+            "`!cost --household`: Shows the household collection value and total spent.\n" +
+            "`!cost --mine`: Shows your collection value and total spent.\n" +
+            "Use only one of a person mention, `--household`, or `--mine`."
         }
       );
 
