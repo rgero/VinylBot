@@ -84,13 +84,28 @@ describe('vinyls.api', () => {
       artist: 'A', album: 'B', owners: [], purchaseDate: '2026-10-02',
       imageUrl: 'img', doubleLP: false, purchaseNumber: 0, purchasedBy: [],
       likedBy: [], price: 0, length: 0, notes: '', tags: [],
-      playCount: 99, purchaseLocation: { name: 'Store' },
+      releaseDate: '2020-02-29', playCount: 99, purchaseLocation: { name: 'Store' },
     } as any);
 
     expect(builder.insert).toHaveBeenCalledWith({
       artist: 'A', album: 'B', owners: [], purchase_date: '2026-10-02',
       image_url: 'img', double_lp: false, purchase_number: 0, purchased_by: [],
-      liked_by: [], price: 0, length: 0, notes: '', tags: [],
+      liked_by: [], price: 0, length: 0, notes: '', tags: [], release_date: '2020-02-29',
+    });
+  });
+
+  it('omits incomplete release dates when inserting', async () => {
+    const builder = makeAwaitableBuilder({ data: { id: 1 }, error: null });
+    fromMock.mockReturnValue(builder);
+
+    await addVinyl({
+      artist: 'A', album: 'B', owners: [], purchaseDate: '2026-10-02',
+      imageUrl: 'img', doubleLP: false, releaseDate: '2020-02',
+    } as any);
+
+    expect(builder.insert).toHaveBeenCalledWith({
+      artist: 'A', album: 'B', owners: [], purchase_date: '2026-10-02',
+      image_url: 'img', double_lp: false,
     });
   });
 

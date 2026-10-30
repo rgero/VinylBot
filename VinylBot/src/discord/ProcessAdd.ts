@@ -36,7 +36,7 @@ export const ProcessAdd = async (message: Message) => {
 
     const purchaseDate = new Date().toISOString();
 
-    const status = await addVinyl({artist: artists, album: albumName, imageUrl: albumArt,notes, purchaseDate, owners: [userID.id], doubleLP: false, length});
+    const status = await addVinyl({artist: artists, album: albumName, imageUrl: albumArt,notes, purchaseDate, owners: [userID.id], doubleLP: false, length, releaseDate});
     if (status === "ERROR") {
       return message.reply("❌ System error: Could not save to database.");
     }

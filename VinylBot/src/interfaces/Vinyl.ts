@@ -17,6 +17,7 @@ export interface Vinyl extends BaseVinyl{
   imageUrl: string;
   doubleLP: boolean;
   tags?: string[];
+  releaseDate?: string;
 }
 
 export type VinylWithLocation = {

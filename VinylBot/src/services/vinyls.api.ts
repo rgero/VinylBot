@@ -21,6 +21,7 @@ type VinylRow = Omit<Vinyl, 'purchaseNumber' | 'purchaseDate' | 'purchasedBy' | 
 
 const VINYL_SELECT = "*, playlogs(count)";
 const VINYL_WITH_LOCATION_SELECT = `${VINYL_SELECT}, purchaseLocation:locations (name)`;
+const COMPLETE_DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 
 const toVinyl = (row: VinylRow): Vinyl => {
   const {
@@ -55,6 +56,7 @@ const toVinylInsert = (vinyl: Omit<Vinyl, 'id'>) => ({
   ...(vinyl.length !== undefined ? { length: vinyl.length } : {}),
   ...(vinyl.notes !== undefined ? { notes: vinyl.notes } : {}),
   ...(vinyl.tags !== undefined ? { tags: vinyl.tags } : {}),
+  ...(vinyl.releaseDate && COMPLETE_DATE_PATTERN.test(vinyl.releaseDate) ? { release_date: vinyl.releaseDate } : {}),
 });
 
 const hydrateVinyls = (rows: VinylRow[]): Vinyl[] => rows.map(({ playlogs, ...vinyl }) => ({
